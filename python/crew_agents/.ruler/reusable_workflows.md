@@ -1,5 +1,14 @@
+# Reusable Workflow Patterns
 
-# Reusable CrewAI Workflow Patterns
+This directory contains reusable workflow patterns that can be referenced across different CrewAI tasks.
+
+## Workflow Files
+
+- **tdd_prototype_workflow.yaml** - Standard 4-phase TDD pattern for any prototype
+- **meshy_asset_workflow.yaml** - Asset generation pipeline for species models
+- **prototype_to_production_workflow.yaml** - Assessment flow for production readiness
+
+These workflows define standardized sequences that ensure consistency across the development process.
 
 ## Overview
 
@@ -69,7 +78,7 @@ tasks:
   generate_beaver_assets:
     description: |
       Generate beaver GLB variants using Meshy.
-      
+
       Follows standard workflow (see x-meshy-asset-workflow):
       - Static sculptured beaver
       - Rigged beaver
@@ -104,21 +113,21 @@ x-multi-creature-diorama-workflow: &multi_creature_diorama
       - Generate all creature GLBs
       - Download and cache
       - Update manifests
-  
+
   scene_composition_phase:
     agent: rendering_engineer
     tasks:
       - Position creatures in diorama
       - Add environmental props
       - Configure lighting/camera
-  
+
   behavior_programming_phase:
     agent: rendering_engineer  # or ai_specialist for Yuka integration
     tasks:
       - Attach AI state machines
       - Configure animations
       - Test interactions
-  
+
   hitl_review_phase:
     agent: qa_validator
     human_input: true

@@ -35,61 +35,12 @@ mcp_servers:
     args: ["-y", "@modelcontextprotocol/server-playwright"]
 
 # ==============================================================================
-# REUSABLE WORKFLOW PATTERNS (YAML Anchors for task composition)
+# REUSABLE WORKFLOW PATTERNS
 # ==============================================================================
-
-# TDD Prototype Workflow - Standard 4-phase pattern for any prototype
-x-tdd-prototype-workflow: &tdd_prototype_workflow
-  design_phase:
-    outputs:
-      - technical_design_document
-      - component_dependency_graph
-      - acceptance_criteria_checklist
-
-  implementation_phase:
-    outputs:
-      - component_files
-      - shader_files
-      - integration_points
-
-  validation_phase:
-    outputs:
-      - validation_report
-      - performance_metrics
-      - approval_recommendation
-
-  documentation_phase:
-    outputs:
-      - updated_conport
-      - integration_guide
-      - handoff_notes
-
-# Meshy Asset Generation Workflow - Reusable for any species
-x-meshy-asset-workflow: &meshy_asset_workflow
-  api_sequence:
-    - text3d_static
-    - rigging
-    - animation_default
-    - animation_custom
-    - retexture_variant
-
-  webhook_config:
-    base_url: "http://0.0.0.0:8000/webhooks/meshy"
-    endpoints:
-      - /static
-      - /rigged
-      - /animated_default
-      - /animated_custom
-      - /retextured
-
-  output_structure:
-    base_path: "client/public/models"
-    files:
-      - static.glb
-      - walk.glb
-      - attack.glb
-      - variant.glb
-    manifest: manifest.json
+# Workflow definitions are now in .ruler/ directory:
+# - .ruler/tdd_prototype_workflow.yaml
+# - .ruler/meshy_asset_workflow.yaml
+# - .ruler/prototype_to_production_workflow.yaml
 
 # ==============================================================================
 # TASK DEFINITIONS - Proper decomposition with cascading dependencies
