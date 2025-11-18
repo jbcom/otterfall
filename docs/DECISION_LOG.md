@@ -34,7 +34,14 @@
 - **Proposed:** Generate 4 key scenario mockups (marsh hub, predator encounter, fishing UI, diorama cutaway)
 - **Architect Plan:** AI-assisted concept boards + Meshy GLB mockups
 - **Next Step:** User approval to proceed with image generation
-- **Status:** AWAITING FEEDBACK
+- **Status:** DEFERRED (prototypes first)
+
+### ✅ APPROVED: Parallel Development Strategy
+- **Date:** Current session
+- **Decision:** CrewAI handles backend systems (ECS, DFU, Yuka, Rendering, RPG) while Agent focuses on frontend prototypes
+- **Implementation:** Batch-based parallel execution using OpenRouter
+- **Deliverables:** Contract-driven development with CI validation
+- **Status:** CONTRACTS CREATED, READY TO EXECUTE
 
 ---
 
