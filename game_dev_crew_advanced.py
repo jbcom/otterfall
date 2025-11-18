@@ -194,7 +194,10 @@ def main():
             
             # Systems Engineer: Database + Git + GitHub + Memory (first 15 tools)
             max_tools = 15
-            systems_tools = list(tools_list[0:max_tools]) if len(tools_list) > max_tools else tools_list
+            if len(tools_list) > max_tools:
+                systems_tools = tools_list[:max_tools]
+            else:
+                systems_tools = tools_list
             agents_map['systems_engineer'] = create_agent(
                 'systems_engineer',
                 agents_config['systems_engineer'],
