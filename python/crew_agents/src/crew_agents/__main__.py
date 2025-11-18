@@ -215,19 +215,6 @@ def create_mcp_tools():
         except Exception as e:
             return f"Error: {e}"
     
-    # Database tools (requires DATABASE_URL, READ-ONLY by default)
-    @tool("query_database")
-    def query_database(sql: str) -> str:
-        """Execute SELECT query on PostgreSQL database (read-only, requires DATABASE_URL)"""
-        adapter, error = _get_adapter('database', DatabaseAdapter)
-        if error:
-            return error
-        try:
-            result = adapter.execute(sql=sql, allow_mutation=False)
-            return result.to_string()
-        except Exception as e:
-            return f"Error: {e}"
-    
     # Filesystem tools (sandboxed to project directory)
     @tool("read_file")
     def read_file(filepath: str) -> str:
@@ -314,13 +301,18 @@ def create_mcp_tools():
         create_github_issue,
         vite_dev_server,
         run_playwright_test,
-        query_database,
         read_file,
         write_file,
         list_directory,
         store_knowledge,
         retrieve_knowledge,
         fetch_library_docs,
+        conport_get_schema,
+        conport_read_projectbrief,
+        conport_get_product_context,
+        conport_get_active_context,
+        conport_log_decision,
+        conport_update_progress,
     ]
     
     return tools_list
