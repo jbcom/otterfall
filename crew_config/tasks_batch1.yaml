@@ -1,0 +1,114 @@
+# Batch 1: Foundation Tasks (Run in Parallel)
+# ECS Component Schemas + DFU Data Analysis
+
+ecs_component_schemas:
+  description: |
+    Implement complete ECS component schema system for Rivermarsh.
+    
+    Requirements:
+    1. Review existing components in client/src/ecs/components/
+    2. Review contract specifications in shared/contracts/BiomeContract.ts and SpeciesContract.ts
+    3. Create complete, type-safe component definitions for:
+       - BiomeComponent (already exists, enhance if needed)
+       - WeatherComponent (already exists, enhance if needed)
+       - TimeOfDayComponent (already exists, enhance if needed)
+       - MovementComponent
+       - CombatComponent
+       - EquipmentComponent
+       - InventoryComponent (expand from base components.ts)
+       - QuestComponent
+       - DialogueComponent
+       - ResourceComponent (gatherable items)
+       - ChunkComponent (world streaming)
+    
+    4. Ensure all components:
+       - Have full TypeScript type coverage
+       - Include JSDoc documentation
+       - Export proper interfaces and types
+       - Have mock data fixtures for testing
+       - Align with contract specifications
+    
+    5. Update client/src/ecs/world.ts Entity type to include all new components
+    6. Write unit tests for component validation
+    7. Create README.md documenting component usage
+    
+    Deliverables:
+    - shared/backend/ecs_world/components/ (TypeScript component files)
+    - shared/backend/ecs_world/README.md
+    - shared/backend/ecs_world/fixtures/ (mock data)
+    - shared/backend/ecs_world/tests/ (unit tests)
+    
+    Integration Contract:
+    - All components must implement proper TypeScript interfaces
+    - Must be importable from client/src/ecs/components/
+    - Must not break existing biome_selector_diorama prototype
+  
+  expected_output: |
+    Complete ECS component schema system with:
+    - 10+ fully typed component definitions
+    - Full JSDoc documentation
+    - Mock data fixtures for all components
+    - Passing unit tests
+    - Integration README
+    - Updated Entity type in world.ts
+
+dfu_data_analysis:
+  description: |
+    Parse Daggerfall Unity data files and map to Rivermarsh natural world.
+    
+    Requirements:
+    1. Research Daggerfall Unity data structure (use web search if needed)
+    2. Identify key data files:
+       - Creature stats (monsters, NPCs)
+       - Item templates
+       - Quest system structure
+       - Terrain generation algorithms
+       - Climate/biome data
+    
+    3. Create parsers for DFU data formats:
+       - Parse creature stat blocks
+       - Extract behavioral patterns
+       - Map loot tables
+       - Identify movement/combat mechanics
+    
+    4. Map DFU fantasy creatures to natural world species:
+       - DFU Wolf → Timber Wolf (Canis lupus)
+       - DFU Rat → Marsh Rat (Rattus norvegicus)
+       - DFU Bear → Black Bear (Ursus americanus)
+       - DFU Spider → Tarantula (Theraphosidae)
+       - etc. (map all common creatures)
+    
+    5. Generate species data conforming to SpeciesContract:
+       - Physical stats (size, mass, speed)
+       - Combat stats (health, damage, range)
+       - AI behavior parameters
+       - Habitat preferences
+       - Drop tables
+    
+    6. Create biome mapping from DFU climate data to Rivermarsh biomes
+    7. Extract useful quest templates and dialogue patterns
+    8. Document mapping decisions and stat conversions
+    
+    Deliverables:
+    - shared/backend/dfu_analysis/parsers/ (Python parser scripts)
+    - shared/backend/dfu_analysis/data/ (Parsed JSON data files)
+    - shared/backend/dfu_analysis/mappings/species.json
+    - shared/backend/dfu_analysis/mappings/biomes.json
+    - shared/backend/dfu_analysis/README.md
+    - Python unit tests for parsers
+    
+    Integration Contract:
+    - All species data must conform to shared/contracts/SpeciesContract.ts
+    - JSON output must be importable by TypeScript
+    - Must provide at least 20 mapped species
+    - Must include documentation of conversion formulas
+  
+  expected_output: |
+    Complete DFU data extraction system with:
+    - Working Python parsers for DFU data
+    - 20+ species mapped to natural world equivalents
+    - Biome climate data mapped to Rivermarsh biomes
+    - Quest template extraction
+    - Full documentation of mapping decisions
+    - Passing Python unit tests
+    - JSON data files ready for TypeScript import
