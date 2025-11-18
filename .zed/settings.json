@@ -40,7 +40,7 @@
         "conport-mcp"
       ],
       "env": {
-        "CONPORT_FILES": "project_brief.md"
+        "CONPORT_FILES": "projectbrief.md"
       },
       "source": "custom"
     },

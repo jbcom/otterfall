@@ -9,7 +9,8 @@
       ],
       "env": {
         "CONPORT_FILES": "projectbrief.md"
-      }
+      },
+      "type": "stdio"
     },
     "material-ui": {
       "command": "npx",
