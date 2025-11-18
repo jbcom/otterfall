@@ -11,7 +11,6 @@ from pathlib import Path
 from crewai import Agent, Task, Crew, Process
 from crewai.project import CrewBase, agent, task, crew
 from crewai.tools import tool
-from litellm import completion
 
 # Import production adapters
 from crew_agents.config import load_crew_config

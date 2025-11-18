@@ -6,7 +6,6 @@ requires-python = ">=3.13"
 dependencies = [
     "crewai[anthropic]>=1.5.0",
     "crewai-tools>=1.5.0",
-    "litellm>=1.80.0",
     "pyyaml>=6.0.3",
     "httpx>=0.28.1",
     "psutil>=7.1.3",
