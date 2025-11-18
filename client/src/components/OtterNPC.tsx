@@ -1,4 +1,4 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useRivermarsh, OtterNPC as OtterNPCType } from "@/lib/stores/useRivermarsh";
 import * as THREE from "three";
@@ -173,7 +173,7 @@ export function OtterNPC({ npc }: OtterNPCProps) {
 export function NPCManager() {
   const { npcs, spawnNPC } = useRivermarsh();
 
-  useMemo(() => {
+  useEffect(() => {
     const initialNPCs: OtterNPCType[] = [
       {
         id: "elder_moss",
@@ -241,8 +241,10 @@ export function NPCManager() {
       },
     ];
 
-    initialNPCs.forEach((npc) => spawnNPC(npc));
-  }, [spawnNPC]);
+    if (npcs.length === 0) {
+      initialNPCs.forEach((npc) => spawnNPC(npc));
+    }
+  }, []);
 
   return (
     <>

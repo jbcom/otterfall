@@ -28,7 +28,7 @@ export function Player({ mobileInput }: PlayerProps) {
   const playerRef = useRef<THREE.Mesh>(null);
   const velocityRef = useRef(new THREE.Vector3());
   const { updatePlayerPosition, updatePlayerRotation, player, isPaused, restoreStamina, useStamina } = useRivermarsh();
-  const [, getKeys] = useKeyboardControls<Controls>();
+  const [subscribe, getKeys] = useKeyboardControls<Controls>();
 
   const speed = 5;
   const sprintSpeed = 8;
@@ -44,13 +44,6 @@ export function Player({ mobileInput }: PlayerProps) {
 
   useEffect(() => {
     console.log("Player component mounted - keyboard controls active");
-    
-    const unsubscribe = useKeyboardControls.subscribe(
-      (state) => state.forward,
-      (pressed) => console.log("Forward key:", pressed)
-    );
-
-    return unsubscribe;
   }, []);
 
   useFrame((state, delta) => {

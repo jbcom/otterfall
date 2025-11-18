@@ -156,7 +156,7 @@ function InstancedReeds() {
       [-30, 0, -40],
     ];
 
-    const pos = [];
+    const pos: Array<{ x: number; y: number; z: number; scale: number; rotation: number }> = [];
     waterPositions.forEach((water) => {
       for (let i = 0; i < count / 4; i++) {
         const angle = Math.random() * Math.PI * 2;
