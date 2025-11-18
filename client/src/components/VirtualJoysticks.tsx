@@ -20,9 +20,8 @@ export function VirtualJoysticks() {
 
     joystickManager.on("move", (evt, data) => {
       const clampedDistance = Math.min(data.distance, 40) / 40;
-      const forward = data.vector.y * clampedDistance;
-      const right = data.vector.x * clampedDistance;
-      console.log(`Joystick: vector.x=${data.vector.x.toFixed(2)}, vector.y=${data.vector.y.toFixed(2)} → right=${right.toFixed(2)}, forward=${forward.toFixed(2)}`);
+      const forward = -data.vector.y * clampedDistance;
+      const right = -data.vector.x * clampedDistance;
       setMovement(right, forward);
     });
 
