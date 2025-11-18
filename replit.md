@@ -112,7 +112,7 @@ crew_config/               # CrewAI agent/task definitions
 - Meshy (3D asset generation)
 
 **Database:**
-- PostgreSQL (Drizzle ORM)
+- File-based persistence (TaskRepository in Python)
 
 **Asset Sources:**
 - Daggerfall Unity data files (creature stats, terrain algorithms)

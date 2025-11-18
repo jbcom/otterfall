@@ -1,4 +1,7 @@
-"""PostgreSQL database adapter"""
+"""PostgreSQL database adapter - DEPRECATED
+This adapter is no longer used. The project uses file-based persistence.
+See: python/mesh_toolkit/src/mesh_toolkit/persistence/repository.py
+"""
 
 import os
 import time
