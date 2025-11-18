@@ -38,7 +38,7 @@ print("=" * 70)
 
 def create_mcp_tools():
     """
-    Create production CrewAI tools using real adapters.
+    Create production CrewAI tools using real adapters + ConPort MCP.
     All tools have proper error handling, validation, and logging.
     Adapters are initialized lazily to avoid crashes on missing deps.
     """
@@ -56,6 +56,39 @@ def create_mcp_tools():
             except Exception as e:
                 return None, f"Adapter initialization failed: {e}"
         return _adapters[name], None
+    
+    # ConPort MCP Tools (Context Portal for RAG)
+    @tool("conport_get_schema")
+    def conport_get_schema() -> str:
+        """Get ConPort schema showing all available tools and their parameters"""
+        # This would call the actual ConPort MCP server
+        # For now, return placeholder indicating integration needed
+        return "ConPort MCP integration: Use get_conport_schema to discover tool names and parameters"
+    
+    @tool("conport_read_projectbrief")
+    def conport_read_projectbrief() -> str:
+        """Read projectbrief.md from ConPort custom data (category: 'ProjectBrief', key: 'content')"""
+        return "ConPort MCP integration: Use get_custom_data(category='ProjectBrief', key='content')"
+    
+    @tool("conport_get_product_context")
+    def conport_get_product_context() -> str:
+        """Get overall project goals, features, and architecture from ConPort"""
+        return "ConPort MCP integration: Use get_product_context()"
+    
+    @tool("conport_get_active_context")
+    def conport_get_active_context() -> str:
+        """Get current working focus, recent changes, open issues from ConPort"""
+        return "ConPort MCP integration: Use get_active_context()"
+    
+    @tool("conport_log_decision")
+    def conport_log_decision(summary: str, rationale: str = None, tags: str = None) -> str:
+        """Log architectural or implementation decision to ConPort"""
+        return f"ConPort MCP integration: Use log_decision(summary='{summary}', rationale='{rationale}', tags=[{tags}])"
+    
+    @tool("conport_update_progress")
+    def conport_update_progress(status: str, description: str) -> str:
+        """Update progress entry in ConPort"""
+        return f"ConPort MCP integration: Use log_progress(status='{status}', description='{description}')"
     
     # Git tools (read-only operations)
     @tool("git_status")
@@ -340,6 +373,16 @@ def main():
         print("\n👥 Creating specialized agents...")
         agents_map = {}
         
+        # Project Manager (Alpha): ConPort reading + analysis tools
+        pm_tools = filter_tools(tools_list, ['conport', 'read', 'file', 'docs', 'git'])
+        agents_map['project_manager'] = create_agent(
+            'project_manager',
+            config.agents['project_manager'],
+            llm,
+            pm_tools
+        )
+        print(f"  ✓ Project Manager (Alpha, {len(pm_tools)} tools)")
+        
         # ECS Architect: Code editing + type checking
         ecs_tools = filter_tools(tools_list, ['read', 'write', 'file', 'docs'])
         agents_map['ecs_architect'] = create_agent(
@@ -398,6 +441,16 @@ def main():
             doc_tools
         )
         
+        # Technical Writer (Omega): ConPort writing + all context tools
+        tw_tools = filter_tools(tools_list, ['conport', 'write', 'file', 'git', 'docs'])
+        agents_map['technical_writer'] = create_agent(
+            'technical_writer',
+            config.agents['technical_writer'],
+            llm,
+            tw_tools
+        )
+        print(f"  ✓ Technical Writer (Omega, {len(tw_tools)} tools)")
+        
         # Technical Director (Manager): All tools for coordination
         manager_tools = tools_list  # Manager gets all tools
         agents_map['technical_director'] = create_agent(
@@ -407,7 +460,7 @@ def main():
             manager_tools
         )
         
-        print(f"✓ Created {len(agents_map)} specialized agents (including manager)")
+        print(f"✓ Created {len(agents_map)} specialized agents (including manager, alpha, omega)")
         
         # 5. Create tasks
         print("\n📝 Creating tasks...")

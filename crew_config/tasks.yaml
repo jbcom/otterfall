@@ -37,11 +37,85 @@ performance_testing:
     Test on simulated mobile devices (60fps target).
   expected_output: "Performance report, automated test suite passing, TypeScript validation clean"
 
+context_analysis:
+  description: |
+    ALPHA TASK: Read ConPort context before any work begins.
+    
+    Requirements:
+    1. Use get_conport_schema to understand available ConPort tools
+    2. Read projectbrief.md from ConPort custom data (category: 'ProjectBrief', key: 'content')
+    3. Use get_product_context to fetch overall project goals and architecture
+    4. Use get_active_context to understand current working focus
+    5. Use get_recent_activity_summary to see what changed recently
+    6. Use get_decisions with relevant tags to understand past choices
+    7. Use get_progress to identify blockers and incomplete tasks
+    
+    Analysis:
+    - Identify MACRO level (repository-wide concerns)
+    - Identify MESO level (component/module concerns)
+    - Identify MICRO level (specific task concerns)
+    - List missing information that's been overlooked
+    - List blockers that must be resolved FIRST
+    - Recommend additional agents or MCP servers needed
+    - Suggest task sequencing based on dependencies
+    
+    Deliverables:
+    - Context Analysis Report (markdown)
+    - Blocker List (prioritized)
+    - Dependency Graph (task ordering)
+    - Resource Requirements (agents, MCPs, data)
+  expected_output: |
+    Comprehensive context analysis including:
+    - Current project state from ConPort
+    - Identified blockers and dependencies
+    - Recommended task sequence
+    - Required resources and agents
+    - Risk assessment
+
+context_recording:
+  description: |
+    OMEGA TASK: Record all work into ConPort after task completion.
+    
+    Requirements:
+    1. Use get_conport_schema to understand available ConPort tools
+    2. Log decisions made:
+       - Use log_decision for architectural/implementation choices
+       - Include summary, rationale, implementation_details, tags
+    3. Update progress:
+       - Use log_progress for task completion
+       - Use update_progress to mark items as "completed"
+       - Link progress to decisions using link_conport_items
+    4. Record patterns:
+       - Use log_system_pattern for new coding patterns discovered
+       - Tag appropriately (e.g., "ecs", "rendering", "ai")
+    5. Update contexts:
+       - Use update_product_context if architecture changed
+       - Use update_active_context with current working focus
+    6. Build knowledge graph:
+       - Use link_conport_items to relate decisions, progress, patterns
+    7. Update custom data:
+       - Store glossary terms, specs, or other structured data
+       - Use category-based organization
+    
+    Deliverables:
+    - ConPort database updated with all context
+    - Decisions logged with proper tags
+    - Progress entries marked complete
+    - Knowledge graph links established
+    - Custom data updated (glossary, specs, etc.)
+  expected_output: |
+    Complete ConPort update including:
+    - All decisions logged
+    - Progress entries updated
+    - System patterns recorded
+    - Knowledge graph links created
+    - Product/Active context synchronized
+
 architecture_review:
   description: |
-    Review all code changes against replit.md architecture.
-    Ensure folder structure matches mandated layout (src/components, src/systems, src/scenes).
+    Review all code changes against ConPort product context.
+    Ensure folder structure matches mandated layout from ConPort architecture decisions.
     Use Context7 to fetch latest docs for React, Three.js, Zustand, R3F.
-    Update project documentation (replit.md, ARCHITECTURE.md) with any changes.
+    Update ConPort with any architectural changes via Technical Writer.
     Provide final code review and approval.
-  expected_output: "Architecture compliance report, updated documentation, final approval or revision requests"
+  expected_output: "Architecture compliance report, ConPort updates queued, final approval or revision requests"
