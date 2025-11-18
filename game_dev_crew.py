@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 """
 Rivermarsh Game Development Crew
-Hierarchical AI team for orchestrating game development tasks
+Sequential AI team for orchestrating game development tasks
 """
 
 import os
-from crewai import Agent, Crew, Process, Task
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
+from crewai import Agent, Crew, Process, Task, LLM
 import yaml
 
 
@@ -52,17 +50,12 @@ def create_task(name, config, agents_map):
 agents_config = load_yaml('crew_config/agents.yaml')
 tasks_config = load_yaml('crew_config/tasks.yaml')
 
-# Initialize LLMs
-# Use Anthropic Claude for specialized agents (better at code)
-claude = ChatAnthropic(
-    model="claude-3-5-sonnet-20241022",
-    api_key=os.getenv('ANTHROPIC_API_KEY')
-)
-
-# Use OpenAI for manager (required by CrewAI hierarchical process)
-gpt4 = ChatOpenAI(
-    model="gpt-4o",
-    api_key=os.getenv('OPENAI_API_KEY')
+# Initialize LLM using CrewAI's native LLM class (not LangChain)
+# Claude 3.5 Haiku - fast, affordable, great for code
+claude = LLM(
+    model="claude-3-5-haiku-20241022",
+    temperature=0.1,
+    max_tokens=4096
 )
 
 # Create agents
@@ -76,13 +69,12 @@ tasks_map = {}
 for name, config in tasks_config.items():
     tasks_map[name] = create_task(name, config, agents_map)
 
-# Assemble crew with hierarchical process
+# Assemble crew with sequential process (tasks execute in order with context passing)
 crew = Crew(
     agents=list(agents_map.values()),
     tasks=list(tasks_map.values()),
-    process=Process.hierarchical,
-    manager_llm=gpt4,  # Manager coordinates the workflow
-    memory=True,  # Enable cross-task memory
+    process=Process.sequential,  # Execute tasks in order with context chaining
+    memory=False,  # Disable memory to avoid OpenAI embedding costs
     verbose=True
 )
 
@@ -93,8 +85,8 @@ def main():
     print("🎮 RIVERMARSH GAME DEVELOPMENT CREW")
     print("=" * 80)
     print("\nStarting hierarchical workflow...")
-    print("Manager: GPT-4 (coordinates specialists)")
-    print("Specialists: Claude Sonnet 3.5 (ECS, AI, Systems, QA, Architecture)")
+    print("Process: Sequential (tasks execute in order with context passing)")
+    print("All Agents: Claude 3.5 Sonnet (ECS, AI, Systems, QA, Architecture)")
     print("\nTasks:")
     for i, task_name in enumerate(tasks_config.keys(), 1):
         print(f"  {i}. {task_name}")
