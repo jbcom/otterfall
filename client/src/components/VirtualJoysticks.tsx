@@ -30,7 +30,7 @@ export function VirtualJoysticks() {
 
     moveManager.on("move", (evt, data) => {
       const clampedDistance = Math.min(data.distance, 60) / 60;
-      const forward = data.vector.y * clampedDistance;
+      const forward = -data.vector.y * clampedDistance;
       const right = data.vector.x * clampedDistance;
       setMovement(right, forward);
     });
