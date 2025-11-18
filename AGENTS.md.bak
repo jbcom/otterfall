@@ -1,0 +1,33 @@
+
+# Rivermarsh - AI Agent Instructions
+
+## Project Identity
+Cozy 3D otter adventure game blending exploration, fishing, questing, and relationship building. Think "Zelda: Breath of the Wild meets Stardew Valley" in a realistic marshland setting. Web + mobile (iOS/Android) targeting 60 FPS on mid-tier phones.
+
+## Communication Style
+- Speak like a normal human, not a corporate robot
+- Short sentences when possible
+- No fake enthusiasm
+- Call things what they are
+- Prefer working, beautiful code over "correct" architecture
+
+## Architecture Overview
+- **Frontend**: React Three Fiber + TypeScript + Miniplex ECS
+- **Backend**: Express + Drizzle ORM + PostgreSQL
+- **AI Systems**: Yuka.js for creature behaviors
+- **Asset Pipeline**: Meshy API for 3D generation
+- **Orchestration**: CrewAI agents for parallel development
+
+## Critical Constraints
+- **Performance**: 60 FPS on mid-tier mobile (< 100 draw calls, < 500k verts/frame)
+- **Type Safety**: Zero TypeScript LSP errors allowed
+- **Mobile First**: Touch controls, gyroscope camera, responsive UI
+
+## Detailed Instructions
+See `.ruler/` directory for component-specific rules:
+- **Client rendering**: `client/.ruler/rendering_pipeline.md`
+- **Python testing**: `python/.ruler/testing_conventions.md`
+- **CrewAI workflows**: `python/crew_agents/.ruler/workflow_configuration.md`
+- **Documentation**: `docs/.ruler/writing_style.md`
+
+For cross-cutting concerns (ECS patterns, shaders, React Three Fiber), see `.ruler/*.md`.

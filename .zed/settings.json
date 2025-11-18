@@ -1,0 +1,94 @@
+{
+  "context_servers": {
+    "material-ui": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@material-ui/mcp-server"
+      ],
+      "source": "custom"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@executeautomation/playwright-mcp-server"
+      ],
+      "source": "custom"
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstreamapi/context7"
+      ],
+      "source": "custom"
+    },
+    "vite-react": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "vite-react-mcp-server"
+      ],
+      "source": "custom"
+    },
+    "conport": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "context-portal-mcp",
+        "conport-mcp"
+      ],
+      "env": {
+        "CONPORT_FILES": "project_brief.md"
+      },
+      "source": "custom"
+    },
+    "git": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-git",
+        "--repository",
+        "."
+      ],
+      "source": "custom"
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      },
+      "source": "custom"
+    },
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "${DATABASE_URL}"
+      ],
+      "source": "custom"
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "source": "custom"
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "./"
+      ],
+      "source": "custom"
+    }
+  }
+}
