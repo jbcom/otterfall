@@ -4,6 +4,15 @@ import { subscribeWithSelector } from "zustand/middleware";
 export type OtterFaction = "river_clan" | "marsh_raiders" | "lone_wanderers" | "elder_council" | "neutral";
 export type QuestStatus = "available" | "active" | "completed" | "failed";
 
+export interface OtterSkill {
+  name: string;
+  level: number;
+  experience: number;
+  experienceToNext: number;
+}
+
+export type SkillType = "swimming" | "diving" | "fishing" | "combat" | "sneaking" | "climbing" | "foraging" | "crafting";
+
 export interface PlayerStats {
   health: number;
   maxHealth: number;
@@ -12,14 +21,26 @@ export interface PlayerStats {
   otterAffinity: number;
   level: number;
   experience: number;
+  skills: Record<SkillType, OtterSkill>;
 }
+
+export type EquipmentSlot = "weapon" | "shell_armor" | "diving_gear" | "fishing_rod" | "accessory";
+export type ItemType = "weapon" | "armor" | "tool" | "consumable" | "quest_item" | "treasure";
 
 export interface InventoryItem {
   id: string;
   name: string;
-  type: "weapon" | "consumable" | "quest_item" | "treasure";
+  type: ItemType;
+  equipmentSlot?: EquipmentSlot;
   quantity: number;
   description: string;
+  stats?: {
+    attack?: number;
+    defense?: number;
+    swimSpeed?: number;
+    diveDepth?: number;
+    fishingBonus?: number;
+  };
 }
 
 export interface Quest {
@@ -55,6 +76,7 @@ export interface GameState {
     rotation: [number, number];
     stats: PlayerStats;
     inventory: InventoryItem[];
+    equipped: Partial<Record<EquipmentSlot, InventoryItem>>;
     activeQuests: Quest[];
     completedQuests: Quest[];
     factionReputation: Record<OtterFaction, number>;
@@ -76,6 +98,8 @@ export interface GameState {
   updatePlayerStats: (stats: Partial<PlayerStats>) => void;
   addInventoryItem: (item: InventoryItem) => void;
   removeInventoryItem: (itemId: string, quantity: number) => void;
+  equipItem: (item: InventoryItem) => void;
+  unequipItem: (slot: EquipmentSlot) => void;
   startQuest: (quest: Quest) => void;
   updateQuestObjective: (questId: string, objectiveIndex: number) => void;
   completeQuest: (questId: string) => void;
@@ -90,6 +114,8 @@ export interface GameState {
   useStamina: (amount: number) => void;
   restoreStamina: (amount: number) => void;
   addExperience: (amount: number) => void;
+  improveSkill: (skillType: SkillType, experienceAmount: number) => void;
+  updateFactionReputation: (faction: OtterFaction, amount: number) => void;
   spawnNPC: (npc: OtterNPC) => void;
   removeNPC: (npcId: string) => void;
   damageNPC: (npcId: string, amount: number) => void;
@@ -108,6 +134,16 @@ export const useRivermarsh = create<GameState>()(
         otterAffinity: 50,
         level: 1,
         experience: 0,
+        skills: {
+          swimming: { name: "Swimming", level: 1, experience: 0, experienceToNext: 100 },
+          diving: { name: "Diving", level: 1, experience: 0, experienceToNext: 100 },
+          fishing: { name: "Fishing", level: 1, experience: 0, experienceToNext: 100 },
+          combat: { name: "Combat", level: 1, experience: 0, experienceToNext: 100 },
+          sneaking: { name: "Sneaking", level: 1, experience: 0, experienceToNext: 100 },
+          climbing: { name: "Climbing", level: 1, experience: 0, experienceToNext: 100 },
+          foraging: { name: "Foraging", level: 1, experience: 0, experienceToNext: 100 },
+          crafting: { name: "Crafting", level: 1, experience: 0, experienceToNext: 100 },
+        },
       },
       inventory: [
         {
@@ -118,6 +154,7 @@ export const useRivermarsh = create<GameState>()(
           description: "A tasty fish that restores health. Otters love these!",
         },
       ],
+      equipped: {},
       activeQuests: [],
       completedQuests: [],
       factionReputation: {
@@ -187,6 +224,61 @@ export const useRivermarsh = create<GameState>()(
             .filter((item) => item.quantity > 0),
         },
       })),
+
+    equipItem: (item) =>
+      set((state) => {
+        if (!item.equipmentSlot) return state;
+        
+        const inventoryItem = state.player.inventory.find((i) => i.id === item.id);
+        if (!inventoryItem) return state;
+        
+        const currentlyEquipped = state.player.equipped[item.equipmentSlot];
+        let newInventory = [...state.player.inventory];
+        
+        if (currentlyEquipped) {
+          newInventory.push(currentlyEquipped);
+        }
+        
+        newInventory = newInventory
+          .map((i) => {
+            if (i.id === item.id) {
+              if (i.quantity > 1) {
+                return { ...i, quantity: i.quantity - 1 };
+              }
+              return null;
+            }
+            return i;
+          })
+          .filter((i): i is InventoryItem => i !== null);
+        
+        return {
+          player: {
+            ...state.player,
+            inventory: newInventory,
+            equipped: {
+              ...state.player.equipped,
+              [item.equipmentSlot]: { ...item, quantity: 1 },
+            },
+          },
+        };
+      }),
+
+    unequipItem: (slot) =>
+      set((state) => {
+        const item = state.player.equipped[slot];
+        if (!item) return state;
+        
+        const equipped = { ...state.player.equipped };
+        delete equipped[slot];
+        
+        return {
+          player: {
+            ...state.player,
+            inventory: [...state.player.inventory, item],
+            equipped,
+          },
+        };
+      }),
 
     startQuest: (quest) =>
       set((state) => ({
@@ -369,6 +461,50 @@ export const useRivermarsh = create<GameState>()(
           },
         };
       }),
+
+    improveSkill: (skillType, experienceAmount) =>
+      set((state) => {
+        let skill = { ...state.player.stats.skills[skillType] };
+        let remainingExp = experienceAmount;
+        
+        while (remainingExp > 0) {
+          const expNeeded = skill.experienceToNext - skill.experience;
+          
+          if (remainingExp + skill.experience >= skill.experienceToNext) {
+            skill.level += 1;
+            skill.experienceToNext = Math.floor(skill.experienceToNext * 1.5);
+            remainingExp -= expNeeded;
+            skill.experience = 0;
+          } else {
+            skill.experience += remainingExp;
+            remainingExp = 0;
+          }
+        }
+        
+        return {
+          player: {
+            ...state.player,
+            stats: {
+              ...state.player.stats,
+              skills: {
+                ...state.player.stats.skills,
+                [skillType]: skill,
+              },
+            },
+          },
+        };
+      }),
+
+    updateFactionReputation: (faction, amount) =>
+      set((state) => ({
+        player: {
+          ...state.player,
+          factionReputation: {
+            ...state.player.factionReputation,
+            [faction]: Math.max(0, Math.min(100, state.player.factionReputation[faction] + amount)),
+          },
+        },
+      })),
 
     spawnNPC: (npc) =>
       set((state) => ({
