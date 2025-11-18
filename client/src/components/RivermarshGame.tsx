@@ -1,13 +1,14 @@
-import { useState, useCallback } from "react";
 import { Canvas } from "@react-three/fiber";
 import { KeyboardControls, Sky } from "@react-three/drei";
 import { Player } from "./Player";
+import { DioramaCamera } from "./DioramaCamera";
 import { MarshlandTerrain } from "./MarshlandTerrain";
 import { NPCManager } from "./OtterNPC";
 import { VirtualJoysticks } from "./VirtualJoysticks";
+import { MobileActionButtons } from "./MobileActionButtons";
+import { DesktopKeyboardInput } from "./DesktopKeyboardInput";
 import { GameUI } from "./GameUI";
 import { SoundManager } from "./SoundManager";
-import { KeyboardInputBridge } from "./KeyboardInputBridge";
 import { EffectComposer, Bloom, DepthOfField } from "@react-three/postprocessing";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 
@@ -23,35 +24,6 @@ enum Controls {
 
 export function RivermarshGame() {
   const isMobile = useIsMobile();
-  
-  const [mobileInput, setMobileInput] = useState({
-    moveX: 0,
-    moveY: 0,
-    lookX: 0,
-    lookY: 0,
-    interact: false,
-    attack: false,
-    jump: false,
-  });
-
-  const handleMove = useCallback((x: number, y: number) => {
-    setMobileInput((prev) => ({ ...prev, moveX: x, moveY: y }));
-  }, []);
-
-  const handleLook = useCallback((x: number, y: number) => {
-    setMobileInput((prev) => ({ ...prev, lookX: x, lookY: y }));
-  }, []);
-
-  const handleKeyboardInput = useCallback((input: { moveX: number; moveY: number; interact: boolean; attack: boolean; jump: boolean }) => {
-    setMobileInput((prev) => ({
-      ...prev,
-      moveX: input.moveX,
-      moveY: input.moveY,
-      interact: input.interact,
-      attack: input.attack,
-      jump: input.jump,
-    }));
-  }, []);
 
   const keyMap = [
     { name: Controls.forward, keys: ["ArrowUp", "KeyW"] },
@@ -69,8 +41,8 @@ export function RivermarshGame() {
         <Canvas
           shadows
           camera={{
-            position: [0, 2, 5],
-            fov: 75,
+            position: [0, 15, 15],
+            fov: 50,
             near: 0.1,
             far: 1000,
           }}
@@ -104,8 +76,9 @@ export function RivermarshGame() {
 
           <fog attach="fog" args={["#7ab8d4", 30, 120]} />
 
-          {!isMobile && <KeyboardInputBridge onInput={handleKeyboardInput} />}
-          <Player mobileInput={mobileInput} />
+          {!isMobile && <DesktopKeyboardInput />}
+          <DioramaCamera />
+          <Player />
           <MarshlandTerrain />
           <NPCManager />
 
@@ -127,7 +100,12 @@ export function RivermarshGame() {
         <GameUI />
         <SoundManager />
         
-        {isMobile && <VirtualJoysticks onMove={handleMove} onLook={handleLook} />}
+        {isMobile && (
+          <>
+            <VirtualJoysticks />
+            <MobileActionButtons />
+          </>
+        )}
       </KeyboardControls>
     </div>
   );

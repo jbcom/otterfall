@@ -1,25 +1,17 @@
 import { useRef, useEffect } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { useRivermarsh } from "@/lib/stores/useRivermarsh";
+import { useControlsStore } from "@/stores/useControlsStore";
 import * as THREE from "three";
 
-interface PlayerProps {
-  mobileInput: {
-    moveX: number;
-    moveY: number;
-    lookX: number;
-    lookY: number;
-    interact: boolean;
-    attack: boolean;
-    jump: boolean;
-  };
-}
-
-export function Player({ mobileInput }: PlayerProps) {
-  const { camera } = useThree();
+export function Player() {
   const playerRef = useRef<THREE.Mesh>(null);
   const velocityRef = useRef(new THREE.Vector3());
-  const { updatePlayerPosition, updatePlayerRotation, player, isPaused, restoreStamina, useStamina, npcs, startDialogue, damageNPC } = useRivermarsh();
+  const { updatePlayerPosition, player, isPaused, restoreStamina, useStamina, npcs, startDialogue, damageNPC } = useRivermarsh();
+  
+  const movementInput = useControlsStore((state) => state.movement);
+  const cameraAzimuth = useControlsStore((state) => state.camera.azimuth);
+  const actions = useControlsStore((state) => state.actions);
 
   const speed = 5;
   const sprintSpeed = 8;
@@ -27,27 +19,23 @@ export function Player({ mobileInput }: PlayerProps) {
   const gravity = -20;
   const groundY = 1;
 
-  const rotationRef = useRef({ x: 0, y: 0 });
   const interactCooldownRef = useRef(0);
   const attackCooldownRef = useRef(0);
   const prevInteractRef = useRef(false);
   const prevAttackRef = useRef(false);
 
   useEffect(() => {
-    rotationRef.current = { x: player.rotation[0], y: player.rotation[1] };
-  }, [player.rotation]);
-
-  useEffect(() => {
-    console.log("Player component mounted - keyboard controls active");
+    console.log("Player component mounted - diorama controls active");
   }, []);
 
   useFrame((state, delta) => {
     if (!playerRef.current || isPaused) return;
     
-    const moveForward = mobileInput.moveY;
-    const moveRight = mobileInput.moveX;
+    const moveForward = movementInput.y;
+    const moveRight = movementInput.x;
 
-    const isSprinting = mobileInput.moveY > 0 && player.stats.stamina > 0;
+    const isMoving = Math.abs(moveForward) > 0.1 || Math.abs(moveRight) > 0.1;
+    const isSprinting = isMoving && player.stats.stamina > 0;
     const currentSpeed = isSprinting ? sprintSpeed : speed;
 
     if (isSprinting) {
@@ -56,16 +44,10 @@ export function Player({ mobileInput }: PlayerProps) {
       restoreStamina(delta * 5);
     }
 
-    rotationRef.current.y -= mobileInput.lookX * delta * 2;
-    rotationRef.current.x -= mobileInput.lookY * delta * 2;
-    rotationRef.current.x = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, rotationRef.current.x));
-
-    updatePlayerRotation([rotationRef.current.x, rotationRef.current.y]);
-
     const forward = new THREE.Vector3(
-      Math.sin(rotationRef.current.y),
+      Math.sin(cameraAzimuth),
       0,
-      Math.cos(rotationRef.current.y)
+      Math.cos(cameraAzimuth)
     );
     const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
 
@@ -80,7 +62,7 @@ export function Player({ mobileInput }: PlayerProps) {
     velocityRef.current.x = movement.x * currentSpeed;
     velocityRef.current.z = movement.z * currentSpeed;
 
-    if (mobileInput.jump && Math.abs(playerRef.current.position.y - groundY) < 0.1 && player.stats.stamina > 20) {
+    if (actions.jump && Math.abs(playerRef.current.position.y - groundY) < 0.1 && player.stats.stamina > 20) {
       velocityRef.current.y = jumpForce;
       useStamina(20);
       console.log("Jump!");
@@ -89,7 +71,7 @@ export function Player({ mobileInput }: PlayerProps) {
     interactCooldownRef.current = Math.max(0, interactCooldownRef.current - delta);
     attackCooldownRef.current = Math.max(0, attackCooldownRef.current - delta);
 
-    if (mobileInput.interact && !prevInteractRef.current && interactCooldownRef.current === 0) {
+    if (actions.interact && !prevInteractRef.current && interactCooldownRef.current === 0) {
       const playerPos = new THREE.Vector3(...player.position);
       const interactRange = 3;
       
@@ -105,9 +87,9 @@ export function Player({ mobileInput }: PlayerProps) {
         interactCooldownRef.current = 0.5;
       }
     }
-    prevInteractRef.current = mobileInput.interact;
+    prevInteractRef.current = actions.interact;
 
-    if (mobileInput.attack && !prevAttackRef.current && attackCooldownRef.current === 0 && player.stats.stamina > 15) {
+    if (actions.attack && !prevAttackRef.current && attackCooldownRef.current === 0 && player.stats.stamina > 15) {
       const playerPos = new THREE.Vector3(...player.position);
       const attackRange = 2.5;
       
@@ -119,7 +101,7 @@ export function Player({ mobileInput }: PlayerProps) {
 
       if (targetNPC) {
         const baseDamage = 10;
-        const weaponBonus = player.equipment.weapon?.stats.attack || 0;
+        const weaponBonus = player.equipped.weapon?.stats.attack || 0;
         const totalDamage = baseDamage + weaponBonus;
         
         console.log(`Attacking ${targetNPC.name} for ${totalDamage} damage!`);
@@ -130,7 +112,7 @@ export function Player({ mobileInput }: PlayerProps) {
         console.log("Attack missed - no enemy in range");
       }
     }
-    prevAttackRef.current = mobileInput.attack;
+    prevAttackRef.current = actions.attack;
 
     velocityRef.current.y += gravity * delta;
 
@@ -144,20 +126,17 @@ export function Player({ mobileInput }: PlayerProps) {
 
     playerRef.current.position.copy(newPosition);
     updatePlayerPosition([newPosition.x, newPosition.y, newPosition.z]);
-
-    camera.position.set(
-      newPosition.x,
-      newPosition.y + 0.5,
-      newPosition.z
-    );
-    
-    camera.rotation.set(rotationRef.current.x, rotationRef.current.y, 0);
   });
 
   return (
-    <mesh ref={playerRef} position={player.position} visible={false}>
-      <boxGeometry args={[0.5, 1, 0.5]} />
-      <meshStandardMaterial color="#8B4513" />
+    <mesh ref={playerRef} position={player.position} castShadow>
+      <boxGeometry args={[0.6, 0.8, 1]} />
+      <meshStandardMaterial color="#8B6914" />
+      
+      <mesh position={[0, 0.5, 0.3]} castShadow>
+        <sphereGeometry args={[0.25, 16, 16]} />
+        <meshStandardMaterial color="#8B6914" />
+      </mesh>
     </mesh>
   );
 }

@@ -1,14 +1,11 @@
 import { useEffect, useRef } from "react";
 import nipplejs from "nipplejs";
+import { useControlsStore } from "@/stores/useControlsStore";
 
-interface VirtualJoysticksProps {
-  onMove: (x: number, y: number) => void;
-  onLook: (x: number, y: number) => void;
-}
-
-export function VirtualJoysticks({ onMove, onLook }: VirtualJoysticksProps) {
+export function VirtualJoysticks() {
   const moveContainerRef = useRef<HTMLDivElement>(null);
   const lookContainerRef = useRef<HTMLDivElement>(null);
+  const { setMovement, setCamera, resetMovement, resetCamera } = useControlsStore();
 
   useEffect(() => {
     if (!moveContainerRef.current || !lookContainerRef.current) return;
@@ -17,43 +14,47 @@ export function VirtualJoysticks({ onMove, onLook }: VirtualJoysticksProps) {
       zone: moveContainerRef.current,
       mode: "static",
       position: { left: "15%", bottom: "15%" },
-      color: "rgba(100, 150, 200, 0.5)",
+      color: "rgba(100, 150, 200, 0.7)",
       size: 120,
+      threshold: 0.1,
     });
 
     const lookManager = nipplejs.create({
       zone: lookContainerRef.current,
       mode: "static",
       position: { right: "15%", bottom: "15%" },
-      color: "rgba(200, 150, 100, 0.5)",
+      color: "rgba(200, 150, 100, 0.7)",
       size: 120,
+      threshold: 0.1,
     });
 
     moveManager.on("move", (evt, data) => {
-      const forward = data.vector.y;
-      const right = data.vector.x;
-      onMove(right, forward);
+      const clampedDistance = Math.min(data.distance, 60) / 60;
+      const forward = data.vector.y * clampedDistance;
+      const right = data.vector.x * clampedDistance;
+      setMovement(right, forward);
     });
 
     moveManager.on("end", () => {
-      onMove(0, 0);
+      resetMovement();
     });
 
     lookManager.on("move", (evt, data) => {
-      const deltaX = data.vector.x * 0.5;
-      const deltaY = data.vector.y * 0.5;
-      onLook(deltaX, deltaY);
+      const clampedDistance = Math.min(data.distance, 60) / 60;
+      const deltaX = data.vector.x * clampedDistance * 0.8;
+      const deltaY = data.vector.y * clampedDistance * 0.8;
+      setCamera(deltaX, deltaY);
     });
 
     lookManager.on("end", () => {
-      onLook(0, 0);
+      resetCamera();
     });
 
     return () => {
       moveManager.destroy();
       lookManager.destroy();
     };
-  }, [onMove, onLook]);
+  }, [setMovement, setCamera, resetMovement, resetCamera]);
 
   return (
     <>
