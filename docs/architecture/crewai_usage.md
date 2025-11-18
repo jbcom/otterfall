@@ -1,4 +1,3 @@
-
 # CrewAI Agent Usage Guide
 
 ## Overview
@@ -354,3 +353,52 @@ After Batch 1 completes:
 - [OpenRouter Models](https://openrouter.ai/models)
 - [MCP Protocol](https://modelcontextprotocol.io)
 - [Process Compose](https://github.com/F1bonacc1/process-compose)
+
+### Using a `projectbrief.md` File (Recommended)
+
+[Permalink: Using a projectbrief.md File (Recommended)](https://github.com/GreatScottyMac/context-portal/tree/main#using-a-projectbriefmd-file-recommended)
+
+1. **Create `projectbrief.md`:** In the root directory of your project workspace, create a file named `projectbrief.md`.
+
+### Using a `projectbrief.md` File (Recommended)
+
+[Permalink: Using a projectbrief.md File (Recommended)](https://github.com/GreatScottyMac/context-portal/tree/main#using-a-projectbriefmd-file-recommended)
+
+1. **Create `projectbrief.md`:** In the root directory of your project workspace, create a file named `projectbrief.md`.
+
+3. **Automatic Prompt for Import:** When an LLM agent using one of the provided ConPort custom instruction sets (e.g., `roo_code_conport_strategy`) initializes in the workspace, it is designed to:
+
+   - Check for the existence of `projectbrief.md`.
+   - If found, it will read the file and ask you if you'd like to import its content into the ConPort **Product Context**.
+
+### Manual Initialization
+
+[Permalink: Manual Initialization](https://github.com/GreatScottyMac/context-portal/tree/main#manual-initialization)
+
+If `projectbrief.md` is not found, or if you choose not to import it:
+
+### Using a `projectbrief.md` File (Recommended)
+
+[Permalink: Using a projectbrief.md File (Recommended)](https://github.com/GreatScottyMac/context-portal/tree/main#using-a-projectbriefmd-file-recommended)
+
+1. **Create `projectbrief.md`:** In the root directory of your project workspace, create a file named `projectbrief.md`.
+
+### Using a `projectbrief.md` File (Recommended)
+
+[Permalink: Using a projectbrief.md File (Recommended)](https://github.com/GreatScottyMac/context-portal/tree/main#using-a-projectbriefmd-file-recommended)
+
+1. **Create `projectbrief.md`:** In the root directory of your project workspace, create a file named `projectbrief.md`.
+
+3. **Automatic Prompt for Import:** When an LLM agent using one of the provided ConPort custom instruction sets (e.g., `roo_code_conport_strategy`) initializes in the workspace, it is designed to:
+
+   - Check for the existence of `projectbrief.md`.
+   - If found, it will read the file and ask you if you'd like to import its content into the ConPort **Product Context**.
+
+### Manual Initialization
+
+[Permalink: Manual Initialization](https://github.com/GreatScottyMac/context-portal/tree/main#manual-initialization)
+
+If `projectbrief.md` is not found, or if you choose not to import it:
+
+Update final reference in initialization section
+By providing initial context, either through `projectbrief.md` or manual entry, you enable ConPort and the connected LLM agent to have a better foundational understanding of the project's Product Context.

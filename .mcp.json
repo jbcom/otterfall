@@ -5,14 +5,11 @@
       "args": [
         "--from",
         "context-portal-mcp",
-        "conport-mcp",
-        "--mode",
-        "stdio",
-        "--log-file",
-        "./logs/conport.log",
-        "--log-level",
-        "INFO"
-      ]
+        "conport-mcp"
+      ],
+      "env": {
+        "CONPORT_FILES": "projectbrief.md"
+      }
     },
     "material-ui": {
       "command": "npx",
