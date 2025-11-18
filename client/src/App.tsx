@@ -1,13 +1,13 @@
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { RivermarshGame } from "./components/RivermarshGame";
+import { PrototypesScreen } from "./prototypes/PrototypesScreen";
 import { theme } from './theme';
 
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <RivermarshGame />
+      <PrototypesScreen />
     </ThemeProvider>
   );
 }
