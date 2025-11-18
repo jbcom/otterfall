@@ -1,117 +1,99 @@
-
 version: "2.0"
 name: "rivermarsh_development_crew"
 
-# ============================================================================
-# AGENT DEFINITIONS - Specialized roles with focused responsibilities
-# ============================================================================
-agents:
-  technical_director:
-    role: "Technical Director & Workflow Coordinator"
-    goal: "Orchestrate Alpha→Work→Omega workflow, delegate to specialists, validate deliverables"
-    backstory: |
-      You are an experienced technical director who understands how to decompose complex
-      game development into vertical slices. You validate each slice before proceeding,
-      ensure proper handoffs between specialists, and maintain architectural coherence.
-      You understand when to parallelize work and when sequential validation is critical.
-    llm: "openrouter/anthropic/claude-3.7-sonnet"
-    max_iter: 40
-    max_reasoning_attempts: 5
-    allow_delegation: true
-    tools:
-      - "mcp://git/execute_command"
-      - "mcp://filesystem/read_file"
-      - "mcp://filesystem/write_file"
-      - "mcp://conport/get_conport_schema"
+# Reference external configuration files
+agents_config: 'src/crew_agents/config/agents.yaml'
+tasks_config: 'src/crew_agents/config/tasks.yaml'
 
-  project_manager:
-    role: "Project Manager (Alpha Agent - Context Reader)"
-    goal: "Analyze projectbrief.md and ConPort, identify blockers, validate prerequisites"
-    backstory: |
-      You start every workflow by reading complete project context. You identify missing
-      information, blockers, dependencies, and required resources. You create actionable
-      checklists and validation criteria for downstream tasks.
-    llm: "openrouter/anthropic/claude-3.5-sonnet"
-    max_iter: 25
-    tools:
-      - "mcp://conport/get_conport_schema"
-      - "mcp://filesystem/read_file"
-      - "mcp://git/execute_command"
+# Crew-level configuration
+process: hierarchical
+manager_llm: "openrouter/anthropic/claude-3.7-sonnet"
+verbose: true
+memory: true
+planning: true
 
-  ecs_architect:
-    role: "ECS & Data Architecture Lead"
-    goal: "Design type-safe ECS schemas, validate data contracts, ensure zero TypeScript errors"
-    backstory: |
-      You specialize in Entity Component System design with Miniplex and TypeScript.
-      You create minimal, focused schemas that solve ONE problem well. You validate
-      against existing patterns and ensure backward compatibility.
-    llm: "openrouter/anthropic/claude-3.5-sonnet"
-    max_iter: 30
-    max_reasoning_attempts: 3
-    tools:
-      - "mcp://filesystem/read_file"
-      - "mcp://filesystem/write_file"
-      - "mcp://git/execute_command"
+# MCP tool server configuration
+mcp_servers:
+  conport:
+    command: "uvx"
+    args: ["--from", "context-portal-mcp", "conport-mcp"]
 
-  rendering_engineer:
-    role: "3D Graphics & Rendering Engineer"
-    goal: "Build performant React Three Fiber scenes, optimize shaders, maintain 60fps"
-    backstory: |
-      You create stunning R3F/Three.js visuals with GLSL shaders while maintaining
-      60fps on mobile. You understand the post-processing pipeline requirements and
-      mobile performance constraints.
-    llm: "openrouter/anthropic/claude-3.5-sonnet"
-    max_iter: 30
-    max_reasoning_attempts: 3
-    tools:
-      - "mcp://filesystem/read_file"
-      - "mcp://filesystem/write_file"
-      - "mcp://vite/vite_start"
+  git:
+    command: "uvx"
+    args: ["mcp-server-git", "--repository", "."]
 
-  integration_specialist:
-    role: "Frontend Integration Specialist"
-    goal: "Connect backend deliverables to R3F frontend, validate end-to-end flow"
-    backstory: |
-      You specialize in integrating backend systems with React Three Fiber frontends.
-      You create adapters, validate type contracts, and ensure smooth data flow from
-      ECS to rendering pipeline.
-    llm: "openrouter/anthropic/claude-3.5-sonnet"
-    max_iter: 30
-    tools:
-      - "mcp://filesystem/read_file"
-      - "mcp://filesystem/write_file"
-      - "mcp://vite/vite_start"
+  filesystem:
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "./"]
 
-  qa_validator:
-    role: "Quality Assurance & Validation Specialist"
-    goal: "Validate deliverables against acceptance criteria, run tests, verify performance"
-    backstory: |
-      You validate that deliverables meet all acceptance criteria. You run unit tests,
-      check TypeScript compilation, measure performance, and create validation reports.
-      You identify gaps before human-in-the-loop review.
-    llm: "openrouter/anthropic/claude-3.5-sonnet"
-    max_iter: 25
-    tools:
-      - "mcp://filesystem/read_file"
-      - "mcp://git/execute_command"
-      - "mcp://playwright/execute"
+  vite:
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-vite"]
 
-  technical_writer:
-    role: "Technical Writer (Omega Agent - Context Writer)"
-    goal: "Document decisions, update ConPort, create integration guides"
-    backstory: |
-      You end every workflow by updating ConPort with decisions and progress.
-      You create clear, actionable documentation that the next agent or human
-      can use to continue work.
-    llm: "openrouter/anthropic/claude-3.5-sonnet"
-    max_iter: 25
-    tools:
-      - "mcp://conport/get_conport_schema"
-      - "mcp://filesystem/write_file"
+  playwright:
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-playwright"]
 
-# ============================================================================
+# ==============================================================================
+# REUSABLE WORKFLOW PATTERNS (YAML Anchors for task composition)
+# ==============================================================================
+
+# TDD Prototype Workflow - Standard 4-phase pattern for any prototype
+x-tdd-prototype-workflow: &tdd_prototype_workflow
+  design_phase:
+    outputs:
+      - technical_design_document
+      - component_dependency_graph
+      - acceptance_criteria_checklist
+
+  implementation_phase:
+    outputs:
+      - component_files
+      - shader_files
+      - integration_points
+
+  validation_phase:
+    outputs:
+      - validation_report
+      - performance_metrics
+      - approval_recommendation
+
+  documentation_phase:
+    outputs:
+      - updated_conport
+      - integration_guide
+      - handoff_notes
+
+# Meshy Asset Generation Workflow - Reusable for any species
+x-meshy-asset-workflow: &meshy_asset_workflow
+  api_sequence:
+    - text3d_static
+    - rigging
+    - animation_default
+    - animation_custom
+    - retexture_variant
+
+  webhook_config:
+    base_url: "http://0.0.0.0:8000/webhooks/meshy"
+    endpoints:
+      - /static
+      - /rigged
+      - /animated_default
+      - /animated_custom
+      - /retextured
+
+  output_structure:
+    base_path: "client/public/models"
+    files:
+      - static.glb
+      - walk.glb
+      - attack.glb
+      - variant.glb
+    manifest: manifest.json
+
+# ==============================================================================
 # TASK DEFINITIONS - Proper decomposition with cascading dependencies
-# ============================================================================
+# ==============================================================================
 tasks:
   # -------------------------------------------------------------------------
   # PHASE 0: ALPHA - Context Loading & Validation
@@ -751,331 +733,331 @@ tasks:
     human_input: true  # STRATEGIC checkpoint - owner decides next direction
 
   # ==============================================================================
-# REUSABLE WORKFLOW PATTERNS (YAML Anchors)
-# ==============================================================================
-
-# TDD Prototype Workflow - Standard 4-phase pattern for any prototype
-x-tdd-prototype-workflow: &tdd_prototype_workflow
-  design_phase:
-    agent: rendering_engineer
-    context_required: true
-    human_input: true
-    outputs:
-      - technical_design_document
-      - component_dependency_graph
-      - acceptance_criteria_checklist
+  # REUSABLE WORKFLOW PATTERNS (YAML Anchors)
+  # ==============================================================================
   
-  implementation_phase:
-    agent: rendering_engineer
-    context_from_design: true
-    outputs:
-      - component_files
-      - shader_files
-      - integration_points
-  
-  validation_phase:
-    agent: qa_validator
-    context_from_implementation: true
-    human_input: true  # HITL approval checkpoint
-    outputs:
-      - validation_report
-      - performance_metrics
-      - approval_recommendation
-  
-  documentation_phase:
-    agent: technical_writer
-    context_from_all: true
-    outputs:
-      - updated_conport
-      - integration_guide
-      - handoff_notes
+  # TDD Prototype Workflow - Standard 4-phase pattern for any prototype
+  x-tdd-prototype-workflow: &tdd_prototype_workflow
+    design_phase:
+      agent: rendering_engineer
+      context_required: true
+      human_input: true
+      outputs:
+        - technical_design_document
+        - component_dependency_graph
+        - acceptance_criteria_checklist
+    
+    implementation_phase:
+      agent: rendering_engineer
+      context_from_design: true
+      outputs:
+        - component_files
+        - shader_files
+        - integration_points
+    
+    validation_phase:
+      agent: qa_validator
+      context_from_implementation: true
+      human_input: true  # HITL approval checkpoint
+      outputs:
+        - validation_report
+        - performance_metrics
+        - approval_recommendation
+    
+    documentation_phase:
+      agent: technical_writer
+      context_from_all: true
+      outputs:
+        - updated_conport
+        - integration_guide
+        - handoff_notes
 
-# Meshy Asset Generation Workflow - Reusable for any species
-x-meshy-asset-workflow: &meshy_asset_workflow
-  api_sequence:
-    - text3d_static
-    - rigging
-    - animation_default
-    - animation_custom
-    - retexture_variant
-  
-  webhook_config:
-    base_url: "http://0.0.0.0:8000/webhooks/meshy"
-    endpoints:
-      - /static
-      - /rigged
-      - /animated_default
-      - /animated_custom
-      - /retextured
-  
-  output_structure:
-    base_path: "client/public/models"
-    files:
-      - static.glb
-      - walk.glb
-      - attack.glb
-      - variant.glb
-    manifest: manifest.json
+  # Meshy Asset Generation Workflow - Reusable for any species
+  x-meshy-asset-workflow: &meshy_asset_workflow
+    api_sequence:
+      - text3d_static
+      - rigging
+      - animation_default
+      - animation_custom
+      - retexture_variant
+    
+    webhook_config:
+      base_url: "http://0.0.0.0:8000/webhooks/meshy"
+      endpoints:
+        - /static
+        - /rigged
+        - /animated_default
+        - /animated_custom
+        - /retextured
+    
+    output_structure:
+      base_path: "client/public/models"
+      files:
+        - static.glb
+        - walk.glb
+        - attack.glb
+        - variant.glb
+      manifest: manifest.json
 
-# ==============================================================================
-# TASK DEFINITIONS
-# ==============================================================================
-tasks:
-  # ... (keep existing tasks until Meshy section)
+  # ==============================================================================
+  # TASK DEFINITIONS
+  # ==============================================================================
+  tasks:
+    # ... (keep existing tasks until Meshy section)
+    
+    # -------------------------------------------------------------------------
+    # PHASE: MESHY GLB VALIDATION - First Real Asset Test
+    # -------------------------------------------------------------------------
+    design_meshy_glb_test_sequence:
+      <<: *tdd_prototype_workflow.design_phase
+      description: |
+        Design the Meshy GLB validation sequence for HITL review.
+        
+        This is the FIRST REAL use of Meshy API to generate reviewable assets.
+        
+        Required Sequence (from reusable workflow):
+        1. Static sculptured otter (text-to-3D only)
+        2. Default animated otter (walk/idle from default animations)
+        3. Custom animated otter (attack animation from Meshy library)
+        4. Retextured otter (different fur color - grey variant)
+        5. Diorama integration (all 4 variants placed in biome scene)
+        
+        Prompt Engineering Requirements:
+        - Read client/src/ecs/data/predatorSpecies.ts for otter.meshyPrompt
+        - Use mesh_toolkit services for API calls
+        - Define webhook URLs for completion tracking
+        - Specify animation IDs from catalog (walk=1, attack=4)
+        - Define retexture prompt (grey fur variant)
+        
+        Deliverables:
+        1. Meshy API call specifications (prompts, art styles, animation IDs)
+        2. Webhook handler endpoints (python/scripts/run_webhook_server.py)
+        3. Expected GLB output paths (client/public/models/otter/*)
+        4. HITL review prototype spec (diorama with 4 variants)
+        
+        Acceptance Criteria:
+        - [ ] All 4 GLB variants generate successfully
+        - [ ] Animations play correctly in prototype
+        - [ ] HITL review UI is present and functional
+        - [ ] Owner can rank 1-10 and REJECT/SAVE each variant
+      expected_output: |
+        ## Meshy GLB Test Sequence Design
+        
+        ### API Call Specifications
+        
+        #### 1. Static Sculptured Otter
+        ```python
+        text3d_service.submit_task(
+            species="otter",
+            prompt="sculpture style river otter standing upright...",
+            art_style="sculpture",
+            callback_url="http://0.0.0.0:8000/webhooks/meshy/otter/static"
+        )
+        ```
+        
+        #### 2. Default Animated Otter
+        ```python
+        # After static completes and is rigged
+        animation_service.submit_task(
+            species="otter",
+            model_id=rigged_task_id,
+            animation_id="1",  # Walk
+            callback_url="http://0.0.0.0:8000/webhooks/meshy/otter/walk"
+        )
+        ```
+        
+        #### 3. Custom Animated Otter (Attack)
+        ```python
+        animation_service.submit_task(
+            species="otter",
+            model_id=rigged_task_id,
+            animation_id="4",  # Attack
+            callback_url="http://0.0.0.0:8000/webhooks/meshy/otter/attack"
+        )
+        ```
+        
+        #### 4. Retextured Grey Otter
+        ```python
+        retexture_service.submit_task(
+            species="otter",
+            model_id=base_task_id,
+            prompt="grey fur with white chest, realistic texture",
+            callback_url="http://0.0.0.0:8000/webhooks/meshy/otter/grey"
+        )
+        ```
+        
+        ### Expected File Structure
+        ```
+        client/public/models/otter/
+        ├── static.glb           # Sculptured, no animation
+        ├── walk.glb             # Default walk animation
+        ├── attack.glb           # Custom attack animation
+        └── grey_walk.glb        # Retextured grey variant
+        ```
+        
+        ### HITL Review Prototype
+        - Prototype ID: "meshy_glb_validation"
+        - Extends: biome_selector_diorama
+        - Renders: 4 otter variants in diorama scene
+        - UI: HITL review controls (rating slider, notes, REJECT/SAVE)
+        
+        ### Ready for Implementation
+        - YES with detailed specifications above
+      agent: rendering_engineer
+      context: [validate_biome_prototype]
+      human_input: true
 
-  # -------------------------------------------------------------------------
-  # PHASE: MESHY GLB VALIDATION - First Real Asset Test
-  # -------------------------------------------------------------------------
-  design_meshy_glb_test_sequence:
-    <<: *tdd_prototype_workflow.design_phase
-    description: |
-      Design the Meshy GLB validation sequence for HITL review.
-      
-      This is the FIRST REAL use of Meshy API to generate reviewable assets.
-      
-      Required Sequence (from reusable workflow):
-      1. Static sculptured otter (text-to-3D only)
-      2. Default animated otter (walk/idle from default animations)
-      3. Custom animated otter (attack animation from Meshy library)
-      4. Retextured otter (different fur color - grey variant)
-      5. Diorama integration (all 4 variants placed in biome scene)
-      
-      Prompt Engineering Requirements:
-      - Read client/src/ecs/data/predatorSpecies.ts for otter.meshyPrompt
-      - Use mesh_toolkit services for API calls
-      - Define webhook URLs for completion tracking
-      - Specify animation IDs from catalog (walk=1, attack=4)
-      - Define retexture prompt (grey fur variant)
-      
-      Deliverables:
-      1. Meshy API call specifications (prompts, art styles, animation IDs)
-      2. Webhook handler endpoints (python/scripts/run_webhook_server.py)
-      3. Expected GLB output paths (client/public/models/otter/*)
-      4. HITL review prototype spec (diorama with 4 variants)
-      
-      Acceptance Criteria:
-      - [ ] All 4 GLB variants generate successfully
-      - [ ] Animations play correctly in prototype
-      - [ ] HITL review UI is present and functional
-      - [ ] Owner can rank 1-10 and REJECT/SAVE each variant
-    expected_output: |
-      ## Meshy GLB Test Sequence Design
-      
-      ### API Call Specifications
-      
-      #### 1. Static Sculptured Otter
-      ```python
-      text3d_service.submit_task(
-          species="otter",
-          prompt="sculpture style river otter standing upright...",
-          art_style="sculpture",
-          callback_url="http://0.0.0.0:8000/webhooks/meshy/otter/static"
-      )
-      ```
-      
-      #### 2. Default Animated Otter
-      ```python
-      # After static completes and is rigged
-      animation_service.submit_task(
-          species="otter",
-          model_id=rigged_task_id,
-          animation_id="1",  # Walk
-          callback_url="http://0.0.0.0:8000/webhooks/meshy/otter/walk"
-      )
-      ```
-      
-      #### 3. Custom Animated Otter (Attack)
-      ```python
-      animation_service.submit_task(
-          species="otter",
-          model_id=rigged_task_id,
-          animation_id="4",  # Attack
-          callback_url="http://0.0.0.0:8000/webhooks/meshy/otter/attack"
-      )
-      ```
-      
-      #### 4. Retextured Grey Otter
-      ```python
-      retexture_service.submit_task(
-          species="otter",
-          model_id=base_task_id,
-          prompt="grey fur with white chest, realistic texture",
-          callback_url="http://0.0.0.0:8000/webhooks/meshy/otter/grey"
-      )
-      ```
-      
-      ### Expected File Structure
-      ```
-      client/public/models/otter/
-      ├── static.glb           # Sculptured, no animation
-      ├── walk.glb             # Default walk animation
-      ├── attack.glb           # Custom attack animation
-      └── grey_walk.glb        # Retextured grey variant
-      ```
-      
-      ### HITL Review Prototype
-      - Prototype ID: "meshy_glb_validation"
-      - Extends: biome_selector_diorama
-      - Renders: 4 otter variants in diorama scene
-      - UI: HITL review controls (rating slider, notes, REJECT/SAVE)
-      
-      ### Ready for Implementation
-      - YES with detailed specifications above
-    agent: rendering_engineer
-    context: [validate_biome_prototype]
-    human_input: true
+    implement_meshy_glb_pipeline:
+      <<: *tdd_prototype_workflow.implementation_phase
+      description: |
+        Implement the Meshy GLB generation pipeline using mesh_toolkit.
+        
+        Uses reusable Meshy workflow (see x-meshy-asset-workflow anchor).
+        
+        Scope:
+        - python/scripts/generate_species_pipeline.py modifications
+        - Webhook server setup (run_webhook_server.py)
+        - GLB download and storage to client/public/models/
+        - Manifest updates for tracking
+        
+        This uses EXISTING mesh_toolkit services - no new code needed there.
+        
+        Integration Steps:
+        1. Start webhook server on port 8000
+        2. Submit 4 Meshy tasks in sequence (static → rig → animate x2 + retexture)
+        3. Wait for webhooks, download GLBs
+        4. Update manifest.json for otter species
+        5. Signal prototype that assets are ready
+      expected_output: |
+        ## Pipeline Implementation
+        
+        ### Files Modified/Created
+        - python/scripts/generate_species_pipeline.py: [otter-specific sequence]
+        - python/scripts/run_webhook_server.py: [webhook handlers]
+        - client/public/models/otter/manifest.json: [tracking data]
+        
+        ### Webhook Server
+        - Listening on: http://0.0.0.0:8000
+        - Endpoints: /webhooks/meshy/otter/{static,walk,attack,grey}
+        - Downloads GLBs to: client/public/models/otter/
+        
+        ### Pipeline Status
+        - Static otter: SUCCEEDED (static.glb downloaded)
+        - Rigging: SUCCEEDED (rigged model ready)
+        - Walk animation: SUCCEEDED (walk.glb downloaded)
+        - Attack animation: SUCCEEDED (attack.glb downloaded)
+        - Grey retexture: SUCCEEDED (grey_walk.glb downloaded)
+        
+        ### Ready for Prototype Integration
+        - YES with all 4 GLB files in public/models/otter/
+      agent: integration_specialist
+      context: [design_meshy_glb_test_sequence]
 
-  implement_meshy_glb_pipeline:
-    <<: *tdd_prototype_workflow.implementation_phase
-    description: |
-      Implement the Meshy GLB generation pipeline using mesh_toolkit.
-      
-      Uses reusable Meshy workflow (see x-meshy-asset-workflow anchor).
-      
-      Scope:
-      - python/scripts/generate_species_pipeline.py modifications
-      - Webhook server setup (run_webhook_server.py)
-      - GLB download and storage to client/public/models/
-      - Manifest updates for tracking
-      
-      This uses EXISTING mesh_toolkit services - no new code needed there.
-      
-      Integration Steps:
-      1. Start webhook server on port 8000
-      2. Submit 4 Meshy tasks in sequence (static → rig → animate x2 + retexture)
-      3. Wait for webhooks, download GLBs
-      4. Update manifest.json for otter species
-      5. Signal prototype that assets are ready
-    expected_output: |
-      ## Pipeline Implementation
-      
-      ### Files Modified/Created
-      - python/scripts/generate_species_pipeline.py: [otter-specific sequence]
-      - python/scripts/run_webhook_server.py: [webhook handlers]
-      - client/public/models/otter/manifest.json: [tracking data]
-      
-      ### Webhook Server
-      - Listening on: http://0.0.0.0:8000
-      - Endpoints: /webhooks/meshy/otter/{static,walk,attack,grey}
-      - Downloads GLBs to: client/public/models/otter/
-      
-      ### Pipeline Status
-      - Static otter: SUCCEEDED (static.glb downloaded)
-      - Rigging: SUCCEEDED (rigged model ready)
-      - Walk animation: SUCCEEDED (walk.glb downloaded)
-      - Attack animation: SUCCEEDED (attack.glb downloaded)
-      - Grey retexture: SUCCEEDED (grey_walk.glb downloaded)
-      
-      ### Ready for Prototype Integration
-      - YES with all 4 GLB files in public/models/otter/
-    agent: integration_specialist
-    context: [design_meshy_glb_test_sequence]
+    implement_hitl_review_prototype:
+      <<: *tdd_prototype_workflow.validation_phase
+      description: |
+        Create the HITL review prototype with standardized review UI.
+        
+        This prototype:
+        1. Loads all 4 otter GLB variants
+        2. Renders them in the biome diorama scene
+        3. Provides HITL review controls UNDER the canvas
+        
+        HITL Review UI (standardized for ALL prototypes):
+        - Material-UI Slider (1-10 rating)
+        - Text area for notes
+        - REJECT button (red, destructive)
+        - SAVE button (green, primary)
+        - Always positioned UNDER the R3F canvas
+        
+        This UI component should be REUSABLE for future prototypes.
+      expected_output: |
+        ## HITL Review Prototype
+        
+        ### Components Created
+        - client/src/prototypes/meshy_glb_validation/App.tsx
+        - client/src/components/HITLReviewControls.tsx (REUSABLE)
+        - client/src/prototypes/meshy_glb_validation/OtterVariants.tsx
+        
+        ### HITL Review Controls (Standardized)
+        ```tsx
+        interface HITLReviewData {
+          rating: number;  // 1-10
+          notes: string;
+          decision: 'REJECT' | 'SAVE' | null;
+        }
+        ```
+        
+        ### Prototype Layout
+        ```
+        ┌─────────────────────────────┐
+        │   R3F Canvas (Diorama)      │
+        │   - 4 otter variants        │
+        │   - Biome scene             │
+        │   - Camera controls         │
+        └─────────────────────────────┘
+        ┌─────────────────────────────┐
+        │   HITL Review Controls      │
+        │   [Slider 1────────────10]  │
+        │   [Notes text area______]   │
+        │   [REJECT]  [SAVE]          │
+        └─────────────────────────────┘
+        ```
+        
+        ### Validation
+        - All 4 GLBs load: YES
+        - Animations play: YES
+        - Review UI functional: YES
+        - Data persists on SAVE: YES
+        
+        ### Ready for HITL Review
+        - YES - awaiting owner review
+      agent: rendering_engineer
+      context: [implement_meshy_glb_pipeline]
+      human_input: true  # OWNER MUST REVIEW AND APPROVE
 
-  implement_hitl_review_prototype:
-    <<: *tdd_prototype_workflow.validation_phase
-    description: |
-      Create the HITL review prototype with standardized review UI.
-      
-      This prototype:
-      1. Loads all 4 otter GLB variants
-      2. Renders them in the biome diorama scene
-      3. Provides HITL review controls UNDER the canvas
-      
-      HITL Review UI (standardized for ALL prototypes):
-      - Material-UI Slider (1-10 rating)
-      - Text area for notes
-      - REJECT button (red, destructive)
-      - SAVE button (green, primary)
-      - Always positioned UNDER the R3F canvas
-      
-      This UI component should be REUSABLE for future prototypes.
-    expected_output: |
-      ## HITL Review Prototype
-      
-      ### Components Created
-      - client/src/prototypes/meshy_glb_validation/App.tsx
-      - client/src/components/HITLReviewControls.tsx (REUSABLE)
-      - client/src/prototypes/meshy_glb_validation/OtterVariants.tsx
-      
-      ### HITL Review Controls (Standardized)
-      ```tsx
-      interface HITLReviewData {
-        rating: number;  // 1-10
-        notes: string;
-        decision: 'REJECT' | 'SAVE' | null;
-      }
-      ```
-      
-      ### Prototype Layout
-      ```
-      ┌─────────────────────────────┐
-      │   R3F Canvas (Diorama)      │
-      │   - 4 otter variants        │
-      │   - Biome scene             │
-      │   - Camera controls         │
-      └─────────────────────────────┘
-      ┌─────────────────────────────┐
-      │   HITL Review Controls      │
-      │   [Slider 1────────────10]  │
-      │   [Notes text area______]   │
-      │   [REJECT]  [SAVE]          │
-      └─────────────────────────────┘
-      ```
-      
-      ### Validation
-      - All 4 GLBs load: YES
-      - Animations play: YES
-      - Review UI functional: YES
-      - Data persists on SAVE: YES
-      
-      ### Ready for HITL Review
-      - YES - awaiting owner review
-    agent: rendering_engineer
-    context: [implement_meshy_glb_pipeline]
-    human_input: true  # OWNER MUST REVIEW AND APPROVE
-
-  # -------------------------------------------------------------------------
-  # OMEGA: Documentation & Context Recording
-  # -------------------------------------------------------------------------
-  omega_record_progress:
-    description: |
-      OMEGA TASK: Record all decisions, progress, and learnings into ConPort.
-      
-      Actions:
-      1. Summarize all completed work
-      2. Document architectural decisions made
-      3. Record patterns discovered
-      4. Update ConPort with current state
-      5. Create handoff notes for next phase
-      
-      This runs AFTER every major phase completion.
-    expected_output: |
-      ## ConPort Update
-      
-      ### Work Completed
-      - Phase 1: [summary]
-      - Phase 2: [summary]
-      - Phase 3: [summary]
-      
-      ### Architectural Decisions
-      - Decision 1: [what, why, alternatives considered]
-      - Decision 2: [what, why, alternatives considered]
-      
-      ### Patterns Discovered
-      - Pattern 1: [description, when to use]
-      - Pattern 2: [description, when to use]
-      
-      ### Current State
-      - ECS schemas: [status]
-      - Prototypes: [list with status]
-      - Technical debt: [list]
-      
-      ### Handoff Notes for Next Phase
-      - Prerequisites: [checklist]
-      - Context to review: [files]
-      - Open questions: [list]
-      
-      ### ConPort Updated
-      - YES/NO with timestamp
-    agent: technical_writer
-    context: [assess_progress_and_plan_next]
+    # -------------------------------------------------------------------------
+    # OMEGA: Documentation & Context Recording
+    # -------------------------------------------------------------------------
+    omega_record_progress:
+      description: |
+        OMEGA TASK: Record all decisions, progress, and learnings into ConPort.
+        
+        Actions:
+        1. Summarize all completed work
+        2. Document architectural decisions made
+        3. Record patterns discovered
+        4. Update ConPort with current state
+        5. Create handoff notes for next phase
+        
+        This runs AFTER every major phase completion.
+      expected_output: |
+        ## ConPort Update
+        
+        ### Work Completed
+        - Phase 1: [summary]
+        - Phase 2: [summary]
+        - Phase 3: [summary]
+        
+        ### Architectural Decisions
+        - Decision 1: [what, why, alternatives considered]
+        - Decision 2: [what, why, alternatives considered]
+        
+        ### Patterns Discovered
+        - Pattern 1: [description, when to use]
+        - Pattern 2: [description, when to use]
+        
+        ### Current State
+        - ECS schemas: [status]
+        - Prototypes: [list with status]
+        - Technical debt: [list]
+        
+        ### Handoff Notes for Next Phase
+        - Prerequisites: [checklist]
+        - Context to review: [files]
+        - Open questions: [list]
+        
+        ### ConPort Updated
+        - YES/NO with timestamp
+      agent: technical_writer
+      context: [assess_progress_and_plan_next]
