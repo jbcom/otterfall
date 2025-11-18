@@ -233,17 +233,22 @@ MCP server configurations for tool access (Git, GitHub, Vite, Playwright, etc.)
 ### process-compose.yaml
 Orchestration config with dependencies, restarts, and logging.
 
-## MCP Tools Available
+## MCP Tools Available (Native Integration)
 
-Each agent has access to filtered MCP tools based on their role:
+CrewAI uses **native MCP integration** - no custom adapters needed!
 
-- **Git/GitHub**: Version control operations
-- **Vite**: Dev server management
-- **Playwright**: Browser testing
-- **Database**: PostgreSQL operations
-- **Filesystem**: File read/write
-- **Knowledge**: RAG search
-- **Docs**: Context7 documentation fetching
+Tools are loaded directly from [`crew_config/mcp_servers.json`](rag://rag_source_0):
+
+- **ConPort**: Context Portal for project knowledge (6 tools)
+- **Git**: Version control operations (2 tools)
+- **GitHub**: Issue creation, PR management (1 tool)
+- **Vite**: Dev server management (1 tool)
+- **Playwright**: Browser testing (1 tool)
+- **Filesystem**: File read/write (3 tools)
+- **Memory**: Persistent knowledge storage (2 tools)
+- **Material-UI/Context7**: Documentation fetching (2 tools)
+
+Each agent gets a **filtered subset** based on their role.
 
 ## Integration Workflow
 
