@@ -51,7 +51,7 @@ command = "uvx"
 args = ["--from", "context-portal-mcp", "conport-mcp"]
 
 [mcp_servers.conport.env]
-CONPORT_FILES = "project_brief.md"
+CONPORT_FILES = "projectbrief.md"
 
 [mcp_servers.git]
 command = "uvx"
