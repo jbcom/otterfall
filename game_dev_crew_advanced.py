@@ -134,10 +134,11 @@ def main():
     
     # Initialize MCP servers and get aggregated tools
     try:
-        server_params = create_mcp_server_params()
-        print(f"\n✓ MCP server configurations loaded: {len(server_params)} servers")
+        server_params_list = create_mcp_server_params()
+        print(f"\n✓ MCP server configurations loaded: {len(server_params_list)} servers")
         
-        with MCPServerAdapter(server_params) as mcp_tools:
+        # MCPServerAdapter accepts list of server params
+        with MCPServerAdapter(server_params_list) as mcp_tools:  # type: ignore
             # Convert to list if needed
             tools_list = list(mcp_tools) if not isinstance(mcp_tools, list) else mcp_tools
             print(f"\n✓ MCP tools loaded: {len(tools_list)} tools available")
@@ -192,7 +193,8 @@ def main():
             )
             
             # Systems Engineer: All tools (first 10)
-            systems_tools = tools_list[:10] if len(tools_list) > 10 else tools_list
+            max_tools = 10
+            systems_tools = tools_list[0:max_tools] if len(tools_list) > max_tools else tools_list
             agents_map['systems_engineer'] = create_agent(
                 'systems_engineer',
                 agents_config['systems_engineer'],
