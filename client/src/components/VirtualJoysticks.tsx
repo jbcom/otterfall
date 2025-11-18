@@ -13,14 +13,14 @@ export function VirtualJoysticks() {
       zone: containerRef.current,
       mode: "dynamic",
       color: "rgba(100, 150, 200, 0.8)",
-      size: 100,
+      size: 80,
       threshold: 0.1,
       restOpacity: 0.7,
     });
 
     joystickManager.on("move", (evt, data) => {
-      const clampedDistance = Math.min(data.distance, 50) / 50;
-      const forward = data.vector.y * clampedDistance;
+      const clampedDistance = Math.min(data.distance, 40) / 40;
+      const forward = -data.vector.y * clampedDistance;
       const right = data.vector.x * clampedDistance;
       setMovement(right, forward);
     });
