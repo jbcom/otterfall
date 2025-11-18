@@ -2,17 +2,6 @@ import { useRef, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRivermarsh } from "@/lib/stores/useRivermarsh";
 import * as THREE from "three";
-import { useKeyboardControls } from "@react-three/drei";
-
-enum Controls {
-  forward = "forward",
-  back = "back",
-  left = "left",
-  right = "right",
-  jump = "jump",
-  interact = "interact",
-  attack = "attack",
-}
 
 interface PlayerProps {
   mobileInput: {
@@ -20,6 +9,9 @@ interface PlayerProps {
     moveY: number;
     lookX: number;
     lookY: number;
+    interact: boolean;
+    attack: boolean;
+    jump: boolean;
   };
 }
 
@@ -28,7 +20,6 @@ export function Player({ mobileInput }: PlayerProps) {
   const playerRef = useRef<THREE.Mesh>(null);
   const velocityRef = useRef(new THREE.Vector3());
   const { updatePlayerPosition, updatePlayerRotation, player, isPaused, restoreStamina, useStamina } = useRivermarsh();
-  const [subscribe, getKeys] = useKeyboardControls<Controls>();
 
   const speed = 5;
   const sprintSpeed = 8;
@@ -48,23 +39,11 @@ export function Player({ mobileInput }: PlayerProps) {
 
   useFrame((state, delta) => {
     if (!playerRef.current || isPaused) return;
-
-    const keys = getKeys();
     
-    let moveForward = 0;
-    let moveRight = 0;
+    const moveForward = mobileInput.moveY;
+    const moveRight = mobileInput.moveX;
 
-    if (keys.forward) moveForward += 1;
-    if (keys.back) moveForward -= 1;
-    if (keys.right) moveRight += 1;
-    if (keys.left) moveRight -= 1;
-
-    if (mobileInput.moveY !== 0 || mobileInput.moveX !== 0) {
-      moveForward = mobileInput.moveY;
-      moveRight = mobileInput.moveX;
-    }
-
-    const isSprinting = keys.forward && player.stats.stamina > 0;
+    const isSprinting = mobileInput.moveY > 0 && player.stats.stamina > 0;
     const currentSpeed = isSprinting ? sprintSpeed : speed;
 
     if (isSprinting) {
@@ -97,7 +76,7 @@ export function Player({ mobileInput }: PlayerProps) {
     velocityRef.current.x = movement.x * currentSpeed;
     velocityRef.current.z = movement.z * currentSpeed;
 
-    if (keys.jump && Math.abs(playerRef.current.position.y - groundY) < 0.1 && player.stats.stamina > 20) {
+    if (mobileInput.jump && Math.abs(playerRef.current.position.y - groundY) < 0.1 && player.stats.stamina > 20) {
       velocityRef.current.y = jumpForce;
       useStamina(20);
       console.log("Jump!");

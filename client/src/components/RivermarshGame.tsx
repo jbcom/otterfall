@@ -7,6 +7,7 @@ import { NPCManager } from "./OtterNPC";
 import { VirtualJoysticks } from "./VirtualJoysticks";
 import { GameUI } from "./GameUI";
 import { SoundManager } from "./SoundManager";
+import { KeyboardInputBridge } from "./KeyboardInputBridge";
 import { EffectComposer, Bloom, DepthOfField } from "@react-three/postprocessing";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 
@@ -28,6 +29,9 @@ export function RivermarshGame() {
     moveY: 0,
     lookX: 0,
     lookY: 0,
+    interact: false,
+    attack: false,
+    jump: false,
   });
 
   const handleMove = useCallback((x: number, y: number) => {
@@ -36,6 +40,17 @@ export function RivermarshGame() {
 
   const handleLook = useCallback((x: number, y: number) => {
     setMobileInput((prev) => ({ ...prev, lookX: x, lookY: y }));
+  }, []);
+
+  const handleKeyboardInput = useCallback((input: { moveX: number; moveY: number; interact: boolean; attack: boolean; jump: boolean }) => {
+    setMobileInput((prev) => ({
+      ...prev,
+      moveX: input.moveX,
+      moveY: input.moveY,
+      interact: input.interact,
+      attack: input.attack,
+      jump: input.jump,
+    }));
   }, []);
 
   const keyMap = [
@@ -89,6 +104,7 @@ export function RivermarshGame() {
 
           <fog attach="fog" args={["#7ab8d4", 30, 120]} />
 
+          {!isMobile && <KeyboardInputBridge onInput={handleKeyboardInput} />}
           <Player mobileInput={mobileInput} />
           <MarshlandTerrain />
           <NPCManager />

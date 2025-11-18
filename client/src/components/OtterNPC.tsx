@@ -30,12 +30,34 @@ export function OtterNPC({ npc }: OtterNPCProps) {
   }, [npc.type]);
 
   const targetPosition = useRef(new THREE.Vector3(...npc.position));
-  const wanderTimer = useRef(0);
+  const seedRef = useRef(npc.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0));
+
+  useEffect(() => {
+    const updateWanderTarget = () => {
+      const seed1 = seedRef.current++;
+      const seed2 = seedRef.current++;
+      const seededRand1 = Math.sin(seed1) * 10000 - Math.floor(Math.sin(seed1) * 10000);
+      const seededRand2 = Math.sin(seed2) * 10000 - Math.floor(Math.sin(seed2) * 10000);
+      
+      const range = npc.type === "hostile" ? 5 : 10;
+      
+      targetPosition.current.set(
+        npc.position[0] + (seededRand1 - 0.5) * range,
+        npc.position[1],
+        npc.position[2] + (seededRand2 - 0.5) * range
+      );
+    };
+    
+    updateWanderTarget();
+    
+    const intervalTime = npc.type === "hostile" ? 3000 : 5000;
+    const intervalId = setInterval(updateWanderTarget, intervalTime);
+    
+    return () => clearInterval(intervalId);
+  }, [npc.id, npc.type, npc.position]);
 
   useFrame((state, delta) => {
     if (!meshRef.current) return;
-
-    wanderTimer.current += delta;
 
     if (npc.type === "hostile") {
       const playerPos = new THREE.Vector3(...player.position);
@@ -51,24 +73,15 @@ export function OtterNPC({ npc }: OtterNPCProps) {
         if (distance < 1.5) {
           console.log(`${npc.name} attacks!`);
         }
-      } else if (wanderTimer.current > 3) {
-        targetPosition.current.set(
-          npc.position[0] + (Math.random() - 0.5) * 5,
-          npc.position[1],
-          npc.position[2] + (Math.random() - 0.5) * 5
-        );
-        wanderTimer.current = 0;
+      } else {
+        const direction = targetPosition.current.clone().sub(meshRef.current.position);
+        if (direction.length() > 0.5) {
+          direction.normalize();
+          meshRef.current.position.add(direction.multiplyScalar(delta * 0.5));
+          meshRef.current.lookAt(targetPosition.current);
+        }
       }
     } else if (npc.type === "friendly" || npc.type === "neutral") {
-      if (wanderTimer.current > 5) {
-        targetPosition.current.set(
-          npc.position[0] + (Math.random() - 0.5) * 10,
-          npc.position[1],
-          npc.position[2] + (Math.random() - 0.5) * 10
-        );
-        wanderTimer.current = 0;
-      }
-
       const direction = targetPosition.current.clone().sub(meshRef.current.position);
       if (direction.length() > 0.5) {
         direction.normalize();
