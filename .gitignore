@@ -4,3 +4,11 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+# Replit
+.replit
+.upm
+.cache
+.config
+
+# CrewAI logs
+logs/

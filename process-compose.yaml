@@ -1,0 +1,143 @@
+
+version: "0.5"
+
+environment:
+  - "OPENAI_API_BASE=https://openrouter.ai/api/v1"
+  - "OPENAI_MODEL_NAME=openrouter/auto"
+  - "OPENROUTER_API_KEY=${OPENROUTER_API_KEY}"
+  - "MESHY_API_KEY=${MESHY_API_KEY}"
+
+log_location: ./logs/crewai
+log_level: info
+
+processes:
+  # Batch 1: Foundation Tasks (Parallel)
+  ecs_component_schemas:
+    command: "uv run python python/crew_agents/run_batch1.py --task ecs_component_schemas"
+    working_dir: "."
+    availability:
+      restart: "on_failure"
+      max_restarts: 3
+    log_configuration:
+      rolling: "daily"
+      max_size_mb: 50
+      max_backups: 7
+    environment:
+      - "PYTHONUNBUFFERED=1"
+      - "TASK_NAME=ecs_component_schemas"
+
+  dfu_data_analysis:
+    command: "uv run python python/crew_agents/run_batch1.py --task dfu_data_analysis"
+    working_dir: "."
+    availability:
+      restart: "on_failure"
+      max_restarts: 3
+    log_configuration:
+      rolling: "daily"
+      max_size_mb: 50
+      max_backups: 7
+    environment:
+      - "PYTHONUNBUFFERED=1"
+      - "TASK_NAME=dfu_data_analysis"
+
+  # Main Development Crew (Sequential after Batch 1)
+  yuka_ai_integration:
+    command: "uv run python -m crew_agents --task yuka_ai_integration"
+    working_dir: "./python/crew_agents"
+    depends_on:
+      ecs_component_schemas:
+        condition: process_completed_successfully
+      dfu_data_analysis:
+        condition: process_completed_successfully
+    availability:
+      restart: "on_failure"
+      max_restarts: 3
+    log_configuration:
+      rolling: "daily"
+      max_size_mb: 50
+      max_backups: 7
+    environment:
+      - "PYTHONUNBUFFERED=1"
+
+  terrain_water_rendering:
+    command: "uv run python -m crew_agents --task terrain_water_rendering"
+    working_dir: "./python/crew_agents"
+    depends_on:
+      ecs_component_schemas:
+        condition: process_completed_successfully
+    availability:
+      restart: "on_failure"
+      max_restarts: 3
+    log_configuration:
+      rolling: "daily"
+      max_size_mb: 50
+      max_backups: 7
+    environment:
+      - "PYTHONUNBUFFERED=1"
+
+  quest_dialogue_systems:
+    command: "uv run python -m crew_agents --task quest_dialogue_systems"
+    working_dir: "./python/crew_agents"
+    depends_on:
+      ecs_component_schemas:
+        condition: process_completed_successfully
+      dfu_data_analysis:
+        condition: process_completed_successfully
+    availability:
+      restart: "on_failure"
+      max_restarts: 3
+    log_configuration:
+      rolling: "daily"
+      max_size_mb: 50
+      max_backups: 7
+    environment:
+      - "PYTHONUNBUFFERED=1"
+
+  performance_testing:
+    command: "uv run python -m crew_agents --task performance_testing"
+    working_dir: "./python/crew_agents"
+    depends_on:
+      yuka_ai_integration:
+        condition: process_completed_successfully
+      terrain_water_rendering:
+        condition: process_completed_successfully
+      quest_dialogue_systems:
+        condition: process_completed_successfully
+    availability:
+      restart: "on_failure"
+      max_restarts: 2
+    log_configuration:
+      rolling: "daily"
+      max_size_mb: 50
+      max_backups: 7
+    environment:
+      - "PYTHONUNBUFFERED=1"
+
+  architecture_review:
+    command: "uv run python -m crew_agents --task architecture_review"
+    working_dir: "./python/crew_agents"
+    depends_on:
+      performance_testing:
+        condition: process_completed_successfully
+    availability:
+      restart: "on_failure"
+      max_restarts: 2
+    log_configuration:
+      rolling: "daily"
+      max_size_mb: 50
+      max_backups: 7
+    environment:
+      - "PYTHONUNBUFFERED=1"
+
+  # Continuous monitoring task
+  crew_monitor:
+    command: "uv run python python/scripts/monitor_crew_progress.py"
+    working_dir: "."
+    availability:
+      restart: "always"
+    log_configuration:
+      rolling: "daily"
+      max_size_mb: 20
+      max_backups: 3
+    environment:
+      - "PYTHONUNBUFFERED=1"
