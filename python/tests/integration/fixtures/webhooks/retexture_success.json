@@ -1,0 +1,23 @@
+{
+  "id": "018d536c-c3d7-938f-e444-4f1776f7f581",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1700001200,
+  "started_at": 1700001210,
+  "finished_at": 1700001500,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/test-models/otter_grey_retextured.glb",
+    "fbx": "https://assets.meshy.ai/test-models/otter_grey_retextured.fbx",
+    "usdz": "https://assets.meshy.ai/test-models/otter_grey_retextured.usdz"
+  },
+  "texture_urls": [
+    {
+      "base_color": "https://assets.meshy.ai/test-textures/grey_base_color.png",
+      "metallic": "https://assets.meshy.ai/test-textures/grey_metallic.png",
+      "roughness": "https://assets.meshy.ai/test-textures/grey_roughness.png",
+      "normal": "https://assets.meshy.ai/test-textures/grey_normal.png"
+    }
+  ],
+  "thumbnail_url": "https://assets.meshy.ai/test-thumbnails/otter_grey.png",
+  "preceding_tasks": 1
+}

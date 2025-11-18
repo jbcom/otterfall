@@ -1,0 +1,17 @@
+{
+  "id": "018b314a-a1b5-716d-c222-2f1776f7f579",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1700000400,
+  "started_at": 1700000410,
+  "finished_at": 1700000700,
+  "result": {
+    "rigged_character_glb_url": "https://assets.meshy.ai/test-models/otter_rigged.glb",
+    "rigged_character_fbx_url": "https://assets.meshy.ai/test-models/otter_rigged.fbx",
+    "basic_animations": {
+      "walking_glb_url": "https://assets.meshy.ai/test-animations/walking.glb",
+      "running_glb_url": "https://assets.meshy.ai/test-animations/running.glb"
+    }
+  },
+  "preceding_tasks": 1
+}

@@ -1,0 +1,42 @@
+interactions:
+- request:
+    body: '{"model_id":"018a210d-8ba4-705c-b111-1f1776f7f578","prompt":"realistic
+      grey otter fur, silver-grey coat, white underbelly, smooth texture, natural
+      lighting","art_style":"realistic","negative_prompt":"brown, orange, cartoon,
+      low quality","enable_pbr":true,"resolution":"1024","ai_model":"meshy-4","seed":43}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '306'
+      content-type:
+      - application/json
+      host:
+      - api.meshy.ai
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: https://api.meshy.ai/openapi/v1/retexture
+  response:
+    body:
+      string: '{"message":"Invalid values: InputTaskID is a required field; ModelURL
+        is a required field"}'
+    headers:
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '91'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Tue, 18 Nov 2025 17:31:22 GMT
+      X-Api-Version:
+      - v2025.11.18
+    status:
+      code: 400
+      message: Bad Request
+version: 1

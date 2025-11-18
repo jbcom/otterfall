@@ -4,7 +4,6 @@ ecs_data_design:
     Ensure all component types are correct, species data is complete,
     and entity factories follow best practices. Validate TypeScript types.
   expected_output: "TypeScript files with zero LSP errors, complete species taxonomy, proper component initializers"
-  agent: ecs_architect
 
 yuka_ai_integration:
   description: |
@@ -13,7 +12,6 @@ yuka_ai_integration:
     Create steering behaviors for predators (chase, evade, wander, flock).
     Implement state machines for prey (idle, flee, forage, hide).
   expected_output: "Working Yuka AI system with smooth creature behaviors, properly synced with R3F rendering"
-  agent: yuka_ai_engineer
 
 terrain_water_rendering:
   description: |
@@ -22,7 +20,6 @@ terrain_water_rendering:
     Add post-processing: bloom, DOF, god rays, color grading.
     Ensure 60fps on mid-tier mobile devices.
   expected_output: "Beautiful, performant marshland with advanced water shaders, running at 60fps on mobile"
-  agent: rendering_engineer
 
 quest_dialogue_systems:
   description: |
@@ -31,7 +28,6 @@ quest_dialogue_systems:
     Create inventory management with item pickup, use, and crafting.
     Integrate with existing Zustand stores.
   expected_output: "Working quest, dialogue, and inventory systems integrated with game UI"
-  agent: systems_engineer
 
 performance_testing:
   description: |
@@ -40,7 +36,6 @@ performance_testing:
     Validate TypeScript types across all files (zero LSP errors).
     Test on simulated mobile devices (60fps target).
   expected_output: "Performance report, automated test suite passing, TypeScript validation clean"
-  agent: qa_tester
 
 architecture_review:
   description: |
@@ -50,4 +45,3 @@ architecture_review:
     Update project documentation (replit.md, ARCHITECTURE.md) with any changes.
     Provide final code review and approval.
   expected_output: "Architecture compliance report, updated documentation, final approval or revision requests"
-  agent: chief_architect

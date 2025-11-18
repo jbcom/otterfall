@@ -8,6 +8,11 @@ ecs_architect:
     are optimized. You have deep knowledge of Miniplex, TypeScript, and game architecture patterns.
   verbose: true
   allow_delegation: false
+  allow_code_execution: true
+  memory: true
+  reasoning: true
+  max_reasoning_attempts: 3
+  max_iter: 25
 
 yuka_ai_engineer:
   role: "AI Systems Engineer (Yuka Specialist)"
@@ -19,6 +24,11 @@ yuka_ai_engineer:
     and optimize AI performance for mobile targets (60fps on mid-tier phones).
   verbose: true
   allow_delegation: false
+  allow_code_execution: true
+  memory: true
+  reasoning: true
+  max_reasoning_attempts: 3
+  max_iter: 25
 
 rendering_engineer:
   role: "3D Graphics & Rendering Engineer"
@@ -30,6 +40,11 @@ rendering_engineer:
     expertise in water shaders, procedural terrain, and post-processing effects.
   verbose: true
   allow_delegation: false
+  allow_code_execution: true
+  memory: true
+  reasoning: true
+  max_reasoning_attempts: 3
+  max_iter: 25
 
 systems_engineer:
   role: "Game Systems Engineer"
@@ -42,6 +57,11 @@ systems_engineer:
     that follows established patterns.
   verbose: true
   allow_delegation: false
+  allow_code_execution: true
+  memory: true
+  reasoning: true
+  max_reasoning_attempts: 3
+  max_iter: 25
 
 qa_tester:
   role: "Quality Assurance & Performance Engineer"
@@ -53,6 +73,11 @@ qa_tester:
     60fps targets. You catch bugs before they reach production and maintain high code quality.
   verbose: true
   allow_delegation: false
+  allow_code_execution: true
+  memory: true
+  reasoning: true
+  max_reasoning_attempts: 3
+  max_iter: 20
 
 chief_architect:
   role: "Chief Architect & Documentation Lead"
@@ -65,3 +90,27 @@ chief_architect:
     authority on architectural decisions and code reviews.
   verbose: true
   allow_delegation: false
+  allow_code_execution: true
+  memory: true
+  reasoning: true
+  max_reasoning_attempts: 4
+  max_iter: 30
+
+technical_director:
+  role: "Technical Director & Project Manager"
+  goal: "Coordinate the development team to build Rivermarsh game systems efficiently"
+  backstory: |
+    You are the technical director overseeing the Rivermarsh game development project.
+    You coordinate a team of specialists: ECS architects, AI engineers, rendering engineers,
+    systems engineers, QA testers, and the chief architect. You break down complex game
+    features into achievable tasks, assign work to the right specialists, review their
+    progress, and ensure everything aligns with the architectural vision in replit.md.
+    You're experienced in managing autonomous AI agents and know when to delegate vs
+    when to step in. You prioritize building working features over perfection.
+  verbose: true
+  allow_delegation: true
+  allow_code_execution: true
+  memory: true
+  reasoning: true
+  max_reasoning_attempts: 5
+  max_iter: 40

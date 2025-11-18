@@ -1,0 +1,12 @@
+{
+  "id": "018c425b-b2c6-827e-d333-3f1776f7f580",
+  "status": "SUCCEEDED",
+  "progress": 100,
+  "created_at": 1700000800,
+  "started_at": 1700000810,
+  "finished_at": 1700001100,
+  "animation_glb_url": "https://assets.meshy.ai/test-animations/otter_attack_animated.glb",
+  "animation_fbx_url": "https://assets.meshy.ai/test-animations/otter_attack_animated.fbx",
+  "video_url": "https://assets.meshy.ai/test-videos/otter_attack_preview.mp4",
+  "preceding_tasks": 2
+}

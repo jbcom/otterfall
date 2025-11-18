@@ -1,225 +1,55 @@
 # Rivermarsh - 3D Otter Adventure Game
 
 ## Overview
-Rivermarsh is a cozy yet deep 3D adventure / light RPG starring an otter protagonist in a vast, living marshland. The player explores, fishes, builds relationships with otter factions, completes quests, fights (or talks) their way out of trouble, and uncovers the secrets of the river.
+Rivermarsh is a cozy 3D adventure/RPG game where players control an otter in a marshland. The game blends exploration, fishing, questing, and relationship building, aiming for a "Zelda: Breath of the Wild meets Stardew Valley" feel. It emphasizes realistic water physics, environmental interaction, and a dynamic world. The game targets web and mobile (iOS/Android), featuring a painterly visual style and aiming for 60 FPS on mid-tier phones.
 
-**Core feel**: Zelda: Breath of the Wild meets Stardew Valley meets Untitled Goose Game – but you're an otter, everything is wet, and the world is alive with water physics, reeds that sway realistically, and otters that actually swim properly.
-
-**Target platforms**: Web first (playable in browser), 60 fps on mid-tier phones, native iOS/Android via Capacitor.
-
-**Visual style**: Lush, painterly, slightly stylised realism. Heavy use of custom shaders, SDF/raymarched details, instanced foliage, and post-processing (bloom, god rays, depth-based fog) to make it look expensive while staying performant.
-
-**Current date**: November 18, 2025 – we are building for 2026 phones, not 2020 ones.
-
-## User Preferences (LAW)
+## User Preferences
 - Speak like a normal human, not a corporate robot
 - Short sentences when possible
 - No fake enthusiasm
 - Call things what they are
 - Prefer working, beautiful code over "correct" architecture
 
-## System Architecture (FINAL – NO DEVIATIONS)
+## System Architecture
+Rivermarsh is built with React 18, TypeScript, React Three Fiber, and @react-three/drei for rendering, using ecctrl for physics and Zustand for global state management. Styling uses Vite with vanilla-extract or Tailwind + clsx. Capacitor enables mobile builds, and Howler.js handles audio. The project avoids heavy frameworks like Redux or Unity.
 
-### Technology Stack (Locked)
-- React 18 + TypeScript (strict mode on)
-- React Three Fiber (@react-three/fiber)
-- @react-three/drei (latest)
-- **@react-three/rapier or ecctrl for physics** (ecctrl preferred – it just works)
-- Zustand for global state (no context hell)
-- Vite + vanilla-extract or Tailwind + clsx for styling
-- GLSL shaders only (no three-meshui, no react-spring for 3D)
-- Capacitor for mobile builds
-- Howler.js for audio
-- **NO Redux, NO Recoil, NO MobX, NO Jotai, NO Signals, NO Unity, NO Godot**
+The project structure is strictly organized into `src/components`, `src/systems`, `src/scenes`, `src/shaders`, `src/lib`, `src/stores`, `src/assets`, and `App.tsx`.
 
-### Folder Structure (THIS IS LAW)
-```
-src/
-├── components/          # Pure R3F components
-│   ├── player/
-│   ├── terrain/
-│   ├── water/
-│   ├── ui/
-│   └── npc/
-├── systems/             # Game logic systems (Zustand + Miniplex if needed)
-│   ├── questSystem.ts
-│   ├── dialogueSystem.ts
-│   ├── inventorySystem.ts
-│   └── combatSystem.ts
-├── scenes/              # Loaded levels / areas (procedural + hand-tweaked)
-├── shaders/             # .glsl files
-├── lib/                 # Utilities, noise, save/load, etc.
-├── stores/              # Zustand stores
-├── assets/              # GLB, textures, audio
-└── App.tsx             # Only the Canvas + UI overlay
-```
+Rendering utilizes SDF/raymarched details for water and fur, InstancedMesh for repeated elements, and marching cubes for dynamic terrain. A mandatory post-processing stack includes Bloom, Depth of Field, SSAO/SSDO, God rays, and color grading. Mobile optimization includes LODs, 1K max textures, BC7 compression, and GPU-driven rendering.
 
-### Rendering Philosophy (NON-NEGOTIABLE)
-- **Everything that can be SDF/raymarched = do it**
-  - Water, mud, reeds bending, otter fur edges, magical effects, UI health bars (as SDF capsules)
-- **InstancedMesh for everything repeated** – grass, lilies, fish schools, bubbles
-- **Marching cubes** only for dynamic deformable terrain (otter digs holes, beavers build dams → regenerate chunks)
-- **Post-processing stack (mandatory)**:
-  - Bloom (for fireflies, magic)
-  - Depth of Field (cinematic focus on NPCs)
-  - SSAO or SSDO
-  - God rays (volumetric light through mist)
-  - Color grading LUT (warm golden hour default)
-- **Mobile = 60 fps target**
-  - LOD system mandatory (three levels)
-  - 1K textures max, BC7 compression
-  - No 4K anything
-  - Instancing + GPU-driven rendering where possible
+A single Zustand store (`useGameStore.ts`) manages game state. Input is mobile-first, using ecctrl for movement and nipplejs for camera/action, managed by a `useControls()` store. The camera uses a smooth-following, angled-down diorama view.
 
-### State Management (Zustand Only)
-```typescript
-// stores/useGameStore.ts
-interface GameStore {
-  player: {
-    health: number
-    stamina: number
-    position: [number, number, number]
-    inventory: Item[]
-    quests: Quest[]
-    factionRep: Record<string, number>
-  }
-  world: {
-    timeOfDay: number // 0-1
-    weather: 'clear' | 'rain' | 'fog' | 'storm'
-  }
-  ui: {
-    activeDialogue: DialogueNode | null
-    showInventory: boolean
-  }
-}
-```
-**One store. No splitting unless it becomes unmanageable (it won't).**
+The world is a 4km × 4km procedurally generated environment, streamed in 256m chunks using layered simplex noise. Biomes are environment-driven, with pre-made structures. The water system features Gerstner waves, caustics, depth-based coloring, refraction, reflection, and otter wake trails. Combat is real-time, pausable, stamina-based with three attack types. Enemy AI uses simple steering behaviors. JSON-based quest and dialogue systems use Zustand for flags, and NPCs follow schedules.
 
-### Input System (Mobile First)
-- **ecctrl** for player movement + built-in virtual joystick (left stick)
-- **nipplejs** for right virtual joystick (look / action / swim direction)
-- Touch action menu on tap-and-hold (Talk / Examine / Use / Attack)
-- Desktop fallback: WASD + mouse look, same code path
-- All input goes through a single `useControls()` store so you can rebind instantly
+Performance targets are strict: iPhone 13 (60 FPS, <150 Draw Calls, <800k Triangles), Mid Android (50-60 FPS, <200 Draw Calls, <1M Triangles), and Desktop (120+ FPS, <300 Draw Calls, <2M Triangles), achieved through instancing, chunking, LOD, GPU culling, and shader optimization. Development mandates no new dependencies without approval, mobile-first feature development, shader fallbacks, accurate UI numbers, a day-one save system, and strict scope.
 
-### Camera System
-- **Diorama view** (angled down, isometric-style)
-- NOT first-person
-- Smooth follow camera tracking the player otter
-- Adjustable zoom and rotation via right joystick
+Key architectural standards include an ECS + Rendering system with mandatory execution order, hybrid rendering (JSX for static, InstancedMesh for dense populations), a 3x3 active chunk window, and a specific post-processing stack order. Material UI components receive throttled UI snapshots from a `useUIState` Zustand store, with mandatory responsive design. Yuka AI integration involves prewarmed Vehicle/StateMachine pools, specific state machine definitions, and steering behavior weights for different animal types, with performance optimization including tiered update frequencies and spatial indexing.
 
-### Procedural World Generation (Rules – NOT chaos)
-The world is procedurally generated but hand-authored in feel.
-- **Heightmap** = layered simplex noise + hand-painted control map (you paint rivers, lakes, villages in Photoshop → import as texture)
-- **Biomes** driven by height + moisture + temperature noise
-- **Villages / dungeons** = pre-made "Daggerfall-style bundles" placed only on valid terrain (slope < 20°, near water, etc.)
-- **No infinite world** – 4 km × 4 km total, streamed in 256 m chunks (9 chunks visible)
-  - This gives the illusion of infinite while keeping it sane
+## External Dependencies
+**Database & Backend:**
+- Drizzle ORM with PostgreSQL
+- Express server with Vite middleware
 
-### Water System (The Star of the Show)
-Use AdvancedWater.tsx with:
-- Gerstner waves + FFT (switchable)
-- Caustics projector
-- Depth-based color + foam at shoreline
-- Refraction + reflection (screen-space or cubemap)
-- Otters leave wake trails (particle or SDF)
-- **This is the thing people screenshot. Make it perfect.**
-
-### Combat System (Simple & Juicy)
-- Real-time but pausable (like Zelda)
-- Stamina-based attacks (swim fast = drain stamina)
-- Three attack types: Bite, Tail Slap, Rock Throw
-- Enemy AI via simple steering behaviors (Yuka is fine)
-- No complex combos – weight + impact feel matters more than depth
-
-### Quest & Dialogue System
-- JSON-based dialogue trees (Yarn Spinner style or simple custom)
-- Flags stored in Zustand
-- Quests are objects with `stages[]` and `flagsRequired`
-- NPCs have schedules (sleep, fish, gossip) using simple state machine
-
-## Performance Targets (Non-Negotiable)
-
-| Device | Target FPS | Max Draw Calls | Max Triangles (visible) |
-|--------|-----------|----------------|------------------------|
-| iPhone 13 | 60 | < 150 | < 800k |
-| Mid Android | 50–60 | < 200 | < 1M |
-| Desktop | 120+ | < 300 | < 2M |
-
-Achieved via:
-- Instancing
-- Chunked terrain
-- LOD (three levels)
-- GPU culling
-- Shader optimisation (no branching where possible)
-
-## Development Rules (Print This)
-1. **No new dependencies without approval**
-   - If it's not in the stack list above → no.
-2. **Every new feature must work on mobile first**
-   - Test on phone before committing.
-3. **All shaders must have fallback for low-end**
-   - Mobile = simpler wave calculation, no caustics if performance < 50 fps.
-4. **No floating point errors in UI**
-   - Round numbers. Always.
-5. **Save system day 1**
-   - Zustand persist middleware → localStorage. Works everywhere.
-6. **No crunch**
-   - Scope is fixed: one beautiful marsh, 8 quests, 3 factions, 6 enemy types. Done is better than perfect.
-
-## Immediate Next Steps (Next 14 Days)
-1. Get ecctrl + nipplejs working with otter model (swimming + land movement)
-2. Implement chunked terrain with proper water intersection
-3. Build one complete otter village (5 houses, 8 NPCs, shop, quest giver)
-4. Implement dialogue system with one full quest ("Find the lost pup")
-5. Add save/load
-6. Polish water until it looks like a $60 game
-7. Mobile build + test on actual phone
-
-## Current Implementation Status (Nov 18, 2025)
-
-### ✅ ECS Data Layer COMPLETE (Type-Safe)
-- **Species Data**: 13 predators + 15 prey with full stats (health, attacks, movement, AI personalities)
-- **Component Initializers**: Centralized defaults for Combat, Movement, AI, Equipment, Animation
-- **Attack Normalization**: Helper functions add missing attack properties (type, knockback, stun, animation)
-- **Entity Factories**: createPredator(), createPrey(), createBiomeResource() using component initializers
-- **Biome Resources**: 9 gatherable types (cattails, berries, mushrooms, etc.) with spawn rules
-- **Yuka AI Setup**: Type declarations, manager class, and bridge pattern ready for integration
-
-### 🔧 What Needs to Change
-- **Camera**: Currently first-person, needs to be diorama/angled-down view
-- **Input**: Currently keyboard-focused with custom KeyboardInputBridge, needs ecctrl + nipplejs mobile-first
-- **State**: Currently split across multiple stores, needs consolidation into single useGameStore
-- **Folder structure**: Doesn't match mandated structure (src/components, src/systems, src/scenes)
-- **Terrain/Water**: Single meshes, needs chunking and advanced shader-based water
-- **ECS Systems**: Need to implement YukaSyncSystem, TimeSystem, WeatherSystem, SpawnSystem, CombatSystem
-
-### 💾 Salvageable Elements
-- NPC data structures and dialogue system scaffolding
-- Quest framework and faction reputation logic
-- Skill/equipment/inventory data models
-- Audio assets and sound management
-- UI component library (Radix + Tailwind)
-- Complete species taxonomy with Meshy prompts
-
-### External Dependencies
-
-**Database & Backend**:
-- Drizzle ORM with PostgreSQL (scaffolded but not actively used)
-- Express server with Vite middleware in development
-
-**Asset Management**:
-- Textures in `/textures` folder
-- Audio files (MP3/OGG/WAV) for background music and sound effects
-- 3D models support (GLTF/GLB)
+**Asset Management:**
+- Textures
+- Audio files (MP3/OGG/WAV)
+- 3D models (GLTF/GLB)
 - Font: Inter via @fontsource
 
-**UI Libraries**:
+**UI Libraries:**
 - Radix UI for accessible primitives
 - Lucide React for icons
-- Tailwind + clsx for styling
+- Tailwind CSS + clsx
 
-**3D Graphics**:
-- @react-three/drei for helper components
-- @react-three/postprocessing for effects
-- vite-plugin-glsl for shader imports
+**3D Graphics:**
+- @react-three/drei
+- @react-three/postprocessing
+- vite-plugin-glsl
+
+**Python Tooling (Build-time only):**
+- Meshy SDK: for 3D model, texture, and animation generation (Webhook-only architecture)
+- CrewAI agents: for autonomous game system building
+- `uv` for package management
+- `httpx`, `tenacity`, `rich`, `playwright` (Meshy SDK dependencies)
+- `crewai[anthropic]`, `litellm` (CrewAI dependencies)
+- `pytest` for testing
