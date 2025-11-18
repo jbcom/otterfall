@@ -63,6 +63,22 @@ env/
 ########################################
 logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# START Ruler Generated Files
+# This block is managed by Ruler - do not edit manually
+AGENTS.md
+CLAUDE.md
+.aider.conf.yml
+.clinerules
+.kilocode/
+.skillz/
+.claude/
+# END Ruler Generated Files
 
 ########################################
 # IDE / Project Settings
