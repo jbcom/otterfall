@@ -8,7 +8,7 @@ channel = "stable-25_05"
 packages = ["SDL2", "alsa-lib", "at-spi2-atk", "atk", "cairo", "chromium", "dbus", "direnv", "gdk-pixbuf", "gitFull", "glib", "gtk3", "jq", "libgbm", "libxkbcommon", "libyaml", "mesa", "nspr", "nss", "pango", "playwright-driver", "process-compose", "psmisc", "sdl3", "tree", "xcodebuild", "xorg.libX11", "xorg.libXcomposite", "xorg.libXcursor", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXi", "xorg.libXrandr", "xorg.libxcb", "zlib"]
 
 [workflows]
-runButton = "Project"
+runButton = "dev-with-crewai"
 
 [[workflows.workflow]]
 name = "Project"
@@ -30,6 +30,28 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow]]
+name = "CrewAI Background Tasks"
+author = 47095276
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "process-compose up"
+
+[[workflows.workflow]]
+name = "dev-with-crewai"
+author = 47095276
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "process-compose up"
 
 [deployment]
 deploymentTarget = "autoscale"
