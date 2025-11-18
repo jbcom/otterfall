@@ -1,38 +1,49 @@
-modules = ["nodejs-20", "bash", "web", "python-3.11"]
-run = "npm run dev"
-hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
+modules = [
+  "web",
+  "bash",
+  "java-graalvm22.3",
+  "nodejs-24",
+  "typescript-language-server",
+  "docker",
+  "python-base-3.13",
+]
+
+[agent]
+expertMode = true
 
 [nix]
-channel = "stable-24_05"
-
-[deployment]
-deploymentTarget = "autoscale"
-build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
-
-[[ports]]
-localPort = 5000
-externalPort = 80
-
-[[ports]]
-localPort = 34503
-externalPort = 3000
-
-[[ports]]
-localPort = 35197
-externalPort = 4200
-
-[[ports]]
-localPort = 42625
-externalPort = 3003
-
-[[ports]]
-localPort = 44755
-externalPort = 3002
-
-[[ports]]
-localPort = 46259
-externalPort = 3001
+channel = "stable-25_05"
+packages = [
+  "chromium",
+  "SDL2",
+  "sdl3",
+  "jq",
+  "psmisc",
+  "tree",
+  "xorg.libxcb",
+  "xorg.libX11",
+  "xorg.libXcomposite",
+  "xorg.libXdamage",
+  "xorg.libXext",
+  "xorg.libXfixes",
+  "xorg.libXrandr",
+  "mesa",
+  "alsa-lib",
+  "nss",
+  "nspr",
+  "dbus",
+  "atk",
+  "at-spi2-atk",
+  "glib",
+  "pango",
+  "cairo",
+  "libxkbcommon",
+  "gtk3",
+  "gdk-pixbuf",
+  "xorg.libXcursor",
+  "xorg.libXi",
+  "libgbm",
+]
 
 [workflows]
 runButton = "Project"
@@ -44,13 +55,37 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Start Game"
+args = "dev"
 
 [[workflows.workflow]]
-name = "Start Game"
+name = "dev"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["npm", "run", "preview"]
+build = ["npm", "run", "build"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
+localPort = 8081
+externalPort = 8081
+
+[[ports]]
+localPort = 35243
+externalPort = 3002
+
+[[ports]]
+localPort = 40803
+externalPort = 3000
