@@ -1,7 +1,20 @@
+# Rivermarsh Agent Instructions
 
-# Rivermarsh - 3D Otter Adventure Game
+This file contains the primary agent instructions for the Rivermarsh project.
 
-## Project Identity
+## Nested Rule Structure
+
+This project uses nested `.ruler/` directories for context-specific instructions:
+
+- **Root `.ruler/`** - Global standards (ECS, R3F, shaders)
+- **`client/.ruler/`** - Frontend-specific rules (rendering pipeline, UI patterns)
+- **`python/.ruler/`** - Python workspace rules (testing, tooling)
+- **`python/crew_agents/.ruler/`** - CrewAI workflow configuration
+- **`docs/.ruler/`** - Documentation writing standards
+
+When working in a specific area, refer to that area's `.ruler/` directory for context-specific guidance.
+
+## Project Overview
 
 Rivermarsh is a cozy 3D adventure/RPG game where players control an otter in a marshland environment. The game combines exploration, fishing, questing, and relationship building, targeting **"Zelda: Breath of the Wild meets Stardew Valley"** vibes with realistic water physics and environmental interaction.
 

@@ -6,7 +6,8 @@
 default_agents = ["copilot", "claude", "cursor", "cline", "windsurf"]
 
 # Enable nested rule loading for component-specific instructions
-nested = false
+# This allows .ruler/ directories throughout the project tree
+nested = true
 
 # --- Global MCP Server Configuration ---
 [mcp]
