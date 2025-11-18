@@ -1,64 +1,134 @@
+
 # Rivermarsh - 3D Otter Adventure Game
 
-## Overview
-Rivermarsh is a cozy 3D adventure/RPG game where players control an otter in a marshland. The game blends exploration, fishing, questing, and relationship building, aiming for a "Zelda: Breath of the Wild meets Stardew Valley" feel. It emphasizes realistic water physics, environmental interaction, and a dynamic world. The game targets web and mobile (iOS/Android), featuring a painterly visual style and aiming for 60 FPS on mid-tier phones.
+> **Note:** This project uses [Ruler](https://github.com/intellectronica/ruler) for distributed agent instructions. All detailed documentation is managed through `.ruler/` directories.
+
+## Quick Reference
+
+- **Architecture:** See [.ruler/AGENTS.md](.ruler/AGENTS.md) for cross-cutting standards
+- **Frontend:** See [client/.ruler/AGENTS.md](client/.ruler/AGENTS.md) for React/R3F patterns
+- **Backend:** See [python/.ruler/AGENTS.md](python/.ruler/AGENTS.md) for Python conventions
+- **Documentation:** See [docs/.ruler/writing_style.md](docs/.ruler/writing_style.md) for writing standards
+- **Shared Contracts:** See [shared/.ruler/AGENTS.md](shared/.ruler/AGENTS.md) for type definitions
+
+## Running the Project
+
+### Development Mode
+```bash
+npm run dev                    # Start Vite dev server only
+process-compose up             # Start CrewAI background tasks
+npm run dev & process-compose up  # Both (or use "dev-with-crewai" workflow)
+```
+
+### Applying Ruler Instructions
+When you switch AI agents (Cursor, Claude, Cline, etc.):
+```bash
+ruler apply
+```
+
+This generates agent-specific instruction files from all `.ruler/` directories.
+
+## Project Overview
+
+Rivermarsh is a cozy 3D adventure/RPG where you play as an otter in a marshland ecosystem. Built with React Three Fiber, TypeScript, and an Entity-Component-System architecture.
+
+**Core Technologies:**
+- React 18 + TypeScript
+- React Three Fiber (@react-three/drei)
+- Miniplex ECS
+- Zustand (state management)
+- Material UI (interface)
+- CrewAI (autonomous development)
+- Meshy API (3D asset generation)
+
+**Deployment:** Replit Deployments (not transitioning off Replit)
+
+## Architecture Highlights
+
+### ECS + Rendering
+- Hybrid architecture: ECS for game logic, R3F for rendering
+- Mandatory system execution order (see [.ruler/ecs_patterns.md](.ruler/ecs_patterns.md))
+- SDF raymarching for water/fog/fur
+- Instanced meshes for grass/reeds
+
+### Material UI Integration
+- Throttled `useUIState` store bridges ECS → React
+- HUD components receive snapshots, not direct ECS access
+- See [client/.ruler/AGENTS.md](client/.ruler/AGENTS.md)
+
+### CrewAI Agents
+- 8 specialist agents orchestrated by Technical Director
+- Background tasks via `process-compose`
+- Deliverables in `shared/backend/`
+- See [docs/architecture/crewai_usage.md](docs/architecture/crewai_usage.md)
 
 ## User Preferences
+
 - Speak like a normal human, not a corporate robot
 - Short sentences when possible
 - No fake enthusiasm
 - Call things what they are
 - Prefer working, beautiful code over "correct" architecture
 
-## System Architecture
-Rivermarsh is built with React 18, TypeScript, React Three Fiber, and @react-three/drei for rendering, using ecctrl for physics and Zustand for global state management. Styling uses Vite with vanilla-extract or Tailwind + clsx. Capacitor enables mobile builds, and Howler.js handles audio. The project avoids heavy frameworks like Redux or Unity.
+## File Structure
 
-The project structure is strictly organized into `src/components`, `src/systems`, `src/scenes`, `src/shaders`, `src/lib`, `src/stores`, `src/assets`, and `App.tsx`.
+```
+.ruler/                    # Root-level cross-cutting standards
+client/.ruler/             # Frontend-specific patterns
+python/.ruler/             # Backend conventions
+python/crew_agents/.ruler/ # CrewAI workflow configuration
+docs/.ruler/               # Documentation style guide
+shared/.ruler/             # Contract patterns
 
-Rendering utilizes SDF/raymarched details for water and fur, InstancedMesh for repeated elements, and marching cubes for dynamic terrain. A mandatory post-processing stack includes Bloom, Depth of Field, SSAO/SSDO, God rays, and color grading. Mobile optimization includes LODs, 1K max textures, BC7 compression, and GPU-driven rendering.
+docs/                      # Detailed documentation
+  architecture/            # System design docs
+  asset_generation/        # Meshy pipeline guides
+  troubleshooting/         # Runbooks
 
-A single Zustand store (`useGameStore.ts`) manages game state. Input is mobile-first, using ecctrl for movement and nipplejs for camera/action, managed by a `useControls()` store. The camera uses a smooth-following, angled-down diorama view.
+shared/
+  contracts/               # TypeScript type definitions
+  backend/                 # CrewAI deliverables
+    ecs_world/
+    dfu_analysis/
+    yuka_ai/
+    rendering_pipeline/
+    rpg_systems/
 
-The world is a 4km × 4km procedurally generated environment, streamed in 256m chunks using layered simplex noise. Biomes are environment-driven, with pre-made structures. The water system features Gerstner waves, caustics, depth-based coloring, refraction, reflection, and otter wake trails. Combat is real-time, pausable, stamina-based with three attack types. Enemy AI uses simple steering behaviors. JSON-based quest and dialogue systems use Zustand for flags, and NPCs follow schedules.
+crew_config/               # CrewAI agent/task definitions
+```
 
-Performance targets are strict: iPhone 13 (60 FPS, <150 Draw Calls, <800k Triangles), Mid Android (50-60 FPS, <200 Draw Calls, <1M Triangles), and Desktop (120+ FPS, <300 Draw Calls, <2M Triangles), achieved through instancing, chunking, LOD, GPU culling, and shader optimization. Development mandates no new dependencies without approval, mobile-first feature development, shader fallbacks, accurate UI numbers, a day-one save system, and strict scope.
+## Key Constraints
 
-Key architectural standards include an ECS + Rendering system with mandatory execution order, hybrid rendering (JSX for static, InstancedMesh for dense populations), a 3x3 active chunk window, and a specific post-processing stack order. Material UI components receive throttled UI snapshots from a `useUIState` Zustand store, with mandatory responsive design. Yuka AI integration involves prewarmed Vehicle/StateMachine pools, specific state machine definitions, and steering behavior weights for different animal types, with performance optimization including tiered update frequencies and spatial indexing.
+1. **ZERO asset generation** until core systems complete (exception: ONE otter PoC)
+2. **Mobile-first development** (60 FPS on iPhone 13)
+3. **No new dependencies** without approval
+4. **Mandatory post-processing stack** (see [client/.ruler/rendering_pipeline.md](client/.ruler/rendering_pipeline.md))
+5. **Strict performance budgets** (see [.ruler/AGENTS.md](.ruler/AGENTS.md))
 
 ## External Dependencies
-**Database & Backend:**
-- Drizzle ORM with PostgreSQL
-- Express server with Vite middleware
 
-**Asset Management:**
-- Textures
-- Audio files (MP3/OGG/WAV)
-- 3D models (GLTF/GLB)
-- Font: Inter via @fontsource
+**Required APIs:**
+- OpenRouter (CrewAI model routing)
+- Meshy (3D asset generation)
 
-**UI Libraries:**
-- Radix UI for accessible primitives
-- Lucide React for icons
-- Tailwind CSS + clsx
+**Database:**
+- PostgreSQL (Drizzle ORM)
 
-**3D Graphics:**
-- @react-three/drei
-- @react-three/postprocessing
-- vite-plugin-glsl
+**Asset Sources:**
+- Daggerfall Unity data files (creature stats, terrain algorithms)
 
-**Python Tooling (Build-time only):**
-- Meshy SDK: for 3D model, texture, and animation generation (Webhook-only architecture)
-- CrewAI agents: for autonomous game system building
-  - See `python/crew_agents/.ruler/workflow_configuration.md` for agent hierarchy
-  - See `docs/.ruler/parallel_development.md` for development workflow
-  - Managed by `process-compose.yaml` for long-running background tasks
-- `uv` for package management
-- `httpx`, `tenacity`, `rich`, `playwright` (Meshy SDK dependencies)
-- `crewai[anthropic]`, `litellm` (CrewAI dependencies)
-- `pytest` for testing
+## Getting Help
 
-**Documentation Structure:**
-All documentation uses nested `.ruler/` directories per the Ruler standard:
-- Root `AGENTS.md` - Executive summary (highest precedence)
-- Component-specific rules in their respective `.ruler/` directories
-- Run `ruler apply --nested` to generate concatenated instructions for AI agentss
+- **CrewAI Issues:** See [docs/troubleshooting/CREWAI_RUNBOOK.md](docs/troubleshooting/CREWAI_RUNBOOK.md)
+- **Integration Questions:** See [docs/architecture/INTEGRATION_GUIDE.md](docs/architecture/INTEGRATION_GUIDE.md)
+- **Parallel Development:** See [docs/PARALLEL_DEVELOPMENT.md](docs/PARALLEL_DEVELOPMENT.md)
+
+## Session State
+
+Active decisions and current status tracked in:
+- [docs/SESSION_STATE.md](docs/SESSION_STATE.md)
+- [docs/DECISION_LOG.md](docs/DECISION_LOG.md)
+
+---
+
+**For complete technical specifications, run `ruler apply` and consult the generated agent-specific files.**
