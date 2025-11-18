@@ -5,7 +5,7 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
-packages = ["SDL2", "alsa-lib", "at-spi2-atk", "atk", "cairo", "chromium", "dbus", "direnv", "gdk-pixbuf", "gitFull", "glib", "gtk3", "jq", "libgbm", "libxkbcommon", "libyaml", "mesa", "nspr", "nss", "pango", "playwright-driver", "process-compose", "psmisc", "sdl3", "tree", "xcodebuild", "xorg.libX11", "xorg.libXcomposite", "xorg.libXcursor", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXi", "xorg.libXrandr", "xorg.libxcb", "zlib"]
+packages = ["SDL2", "alsa-lib", "at-spi2-atk", "atk", "cairo", "chromium", "dbus", "direnv", "gdk-pixbuf", "gitFull", "glib", "gtk3", "jq", "libgbm", "libxkbcommon", "libyaml", "mesa", "nspr", "nss", "pango", "playwright-driver", "process-compose", "psmisc", "sdl3", "tree", "xcodebuild", "xorg.libX11", "xorg.libXcomposite", "xorg.libXcursor", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXi", "xorg.libXrandr", "xorg.libxcb", "zlib", "vim-full", "git-filter-repo"]
 
 [workflows]
 runButton = "dev-with-crewai"
@@ -52,6 +52,78 @@ args = "npm run dev"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "process-compose up"
+
+[[workflows.workflow]]
+name = "CrewAI: ECS Schemas"
+author = 47095276
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "process-compose up ecs_component_schemas"
+
+[[workflows.workflow]]
+name = "CrewAI: DFU Analysis"
+author = 47095276
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "process-compose up dfu_data_analysis"
+
+[[workflows.workflow]]
+name = "CrewAI: Yuka AI"
+author = 47095276
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "process-compose up yuka_ai_integration"
+
+[[workflows.workflow]]
+name = "CrewAI: Terrain/Water"
+author = 47095276
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "process-compose up terrain_water_rendering"
+
+[[workflows.workflow]]
+name = "CrewAI: Quest/Dialogue"
+author = 47095276
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "process-compose up quest_dialogue_systems"
+
+[[workflows.workflow]]
+name = "CrewAI: Performance Test"
+author = 47095276
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "process-compose up performance_testing"
+
+[[workflows.workflow]]
+name = "CrewAI: Architecture Review"
+author = 47095276
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "process-compose up architecture_review"
+
+[[workflows.workflow]]
+name = "CrewAI: Monitor"
+author = 47095276
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "process-compose up crew_monitor"
 
 [deployment]
 deploymentTarget = "autoscale"
