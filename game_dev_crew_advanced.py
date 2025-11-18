@@ -165,8 +165,8 @@ def main():
                             break
                 return filtered
             
-            # ECS Architect: Code analysis tools
-            ecs_tools = filter_tools(tools_list, ['read', 'search', 'analyze', 'context'])
+            # ECS Architect: Code analysis + memory + filesystem
+            ecs_tools = filter_tools(tools_list, ['read', 'search', 'analyze', 'context', 'memory', 'file', 'git'])
             agents_map['ecs_architect'] = create_agent(
                 'ecs_architect', 
                 agents_config['ecs_architect'], 
@@ -174,8 +174,8 @@ def main():
                 ecs_tools
             )
             
-            # Yuka AI Engineer: Code editing + testing
-            yuka_tools = filter_tools(tools_list, ['write', 'edit', 'test', 'run'])
+            # Yuka AI Engineer: Code editing + testing + git
+            yuka_tools = filter_tools(tools_list, ['write', 'edit', 'test', 'run', 'file', 'git', 'commit'])
             agents_map['yuka_ai_engineer'] = create_agent(
                 'yuka_ai_engineer',
                 agents_config['yuka_ai_engineer'],
@@ -183,8 +183,8 @@ def main():
                 yuka_tools
             )
             
-            # Rendering Engineer: Browser tools + React + Material UI
-            rendering_tools = filter_tools(tools_list, ['browser', 'playwright', 'vite', 'react', 'ui', 'mui', 'material'])
+            # Rendering Engineer: Browser + React + Material UI + vite
+            rendering_tools = filter_tools(tools_list, ['browser', 'playwright', 'vite', 'react', 'ui', 'mui', 'material', 'component'])
             agents_map['rendering_engineer'] = create_agent(
                 'rendering_engineer',
                 agents_config['rendering_engineer'],
@@ -192,8 +192,8 @@ def main():
                 rendering_tools
             )
             
-            # Systems Engineer: All tools (first 10)
-            max_tools = 10
+            # Systems Engineer: Database + Git + GitHub + Memory (first 15 tools)
+            max_tools = 15
             systems_tools = list(tools_list[0:max_tools]) if len(tools_list) > max_tools else tools_list
             agents_map['systems_engineer'] = create_agent(
                 'systems_engineer',
@@ -202,8 +202,8 @@ def main():
                 systems_tools
             )
             
-            # QA Tester: Testing + validation tools
-            qa_tools = filter_tools(tools_list, ['test', 'validate', 'check', 'lint', 'playwright'])
+            # QA Tester: Testing + validation + Playwright + GitHub
+            qa_tools = filter_tools(tools_list, ['test', 'validate', 'check', 'lint', 'playwright', 'github', 'issue'])
             agents_map['qa_tester'] = create_agent(
                 'qa_tester',
                 agents_config['qa_tester'],
@@ -211,8 +211,8 @@ def main():
                 qa_tools
             )
             
-            # Chief Architect: Documentation + context tools (including conport)
-            doc_tools = filter_tools(tools_list, ['doc', 'context', 'conport', 'portal', 'read', 'write'])
+            # Chief Architect: Documentation + context + memory + ConPort + GitHub
+            doc_tools = filter_tools(tools_list, ['doc', 'context', 'conport', 'portal', 'read', 'write', 'memory', 'github'])
             agents_map['chief_architect'] = create_agent(
                 'chief_architect',
                 agents_config['chief_architect'],

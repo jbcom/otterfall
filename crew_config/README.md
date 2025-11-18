@@ -53,6 +53,38 @@ Manager Agent (Coordinator)
 - **Command**: `uvx conport-mcp`
 - **Reads**: `project_brief.md` + all markdown files
 
+### 6. **Git MCP** 🌿
+- Version control operations
+- Read, search, and manipulate repositories
+- Commit history and diffs
+- **Package**: `@modelcontextprotocol/server-git`
+
+### 7. **GitHub MCP** 🐙
+- Repository management
+- PR and issue operations
+- Code review automation
+- **Package**: `@modelcontextprotocol/server-github`
+- **Requires**: GITHUB_PERSONAL_ACCESS_TOKEN
+
+### 8. **Postgres MCP** 🐘
+- Database schema inspection
+- Query execution and analysis
+- Auto-connects to Replit's built-in Postgres
+- **Package**: `@modelcontextprotocol/server-postgres`
+- **Uses**: DATABASE_URL (auto-provided by Replit)
+
+### 9. **Memory MCP** 🧠
+- Knowledge graph-based persistent memory
+- Store game design decisions
+- Relationship tracking
+- **Package**: `@modelcontextprotocol/server-memory`
+
+### 10. **Filesystem MCP** 📁
+- Secure file operations
+- Access controls
+- Native MCP implementation
+- **Package**: `@modelcontextprotocol/server-filesystem`
+
 ## Setup
 
 ### 1. Install Dependencies
