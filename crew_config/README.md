@@ -45,11 +45,13 @@ Manager Agent (Coordinator)
 - Build optimization
 - **Package**: `vite-react-mcp`
 
-### 5. **Context-portal MCP** 📚
-- Collaborative documentation
-- Project knowledge management
-- Context sharing across agents
-- **Package**: `context-portal`
+### 5. **ConPort (Context Portal) MCP** 📚
+- Collaborative documentation & project memory
+- RAG-powered knowledge graph
+- Semantic search across project context
+- **Package**: `context-portal-mcp` (Python)
+- **Command**: `uvx conport-mcp`
+- **Reads**: `project_brief.md` + all markdown files
 
 ## Setup
 
@@ -149,10 +151,23 @@ Defines which MCP servers to connect to:
       "command": "npx",
       "args": ["-y", "@mui/mcp-server"],
       "env": {}
+    },
+    "conport": {
+      "command": "uvx",
+      "args": [
+        "--from", "context-portal-mcp",
+        "conport-mcp",
+        "--mode", "stdio",
+        "--workspace_id", ".",
+        "--log-level", "INFO"
+      ],
+      "env": {}
     }
   }
 }
 ```
+
+**Note**: ConPort is a Python package run via `uvx`, not `npx`. It reads `project_brief.md` to give agents shared project context.
 
 ### `agents.yaml`
 Defines agent roles, goals, and backstories:

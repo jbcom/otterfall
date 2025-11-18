@@ -194,7 +194,7 @@ def main():
             
             # Systems Engineer: All tools (first 10)
             max_tools = 10
-            systems_tools = tools_list[0:max_tools] if len(tools_list) > max_tools else tools_list
+            systems_tools = list(tools_list[0:max_tools]) if len(tools_list) > max_tools else tools_list
             agents_map['systems_engineer'] = create_agent(
                 'systems_engineer',
                 agents_config['systems_engineer'],
@@ -211,8 +211,8 @@ def main():
                 qa_tools
             )
             
-            # Chief Architect: Documentation + context tools
-            doc_tools = filter_tools(tools_list, ['doc', 'context', 'portal', 'read', 'write'])
+            # Chief Architect: Documentation + context tools (including conport)
+            doc_tools = filter_tools(tools_list, ['doc', 'context', 'conport', 'portal', 'read', 'write'])
             agents_map['chief_architect'] = create_agent(
                 'chief_architect',
                 agents_config['chief_architect'],

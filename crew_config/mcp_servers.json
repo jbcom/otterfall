@@ -23,9 +23,15 @@
       "args": ["-y", "vite-react-mcp"],
       "env": {}
     },
-    "context_portal": {
-      "command": "npx",
-      "args": ["-y", "context-portal"],
+    "conport": {
+      "command": "uvx",
+      "args": [
+        "--from", "context-portal-mcp",
+        "conport-mcp",
+        "--mode", "stdio",
+        "--workspace_id", ".",
+        "--log-level", "INFO"
+      ],
       "env": {}
     }
   }
