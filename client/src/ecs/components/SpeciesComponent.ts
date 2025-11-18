@@ -53,23 +53,27 @@ export interface SpeciesComponent {
   type: AnySpecies;
   category: 'predator' | 'prey';
   
-  // Meshy generation data (for pre-build script) - null for simple plants
+  // Meshy generation data (for pre-build script)
   meshyPrompt: string;
   meshyArtStyle: 'realistic' | 'sculpture';
   
   // Visual properties
-  size: 'tiny' | 'small' | 'medium' | 'large'; // Affects hitbox and model scale
-  primaryColor: string;    // Primary color (fur/scales/plant)
-  markings: string[];      // Secondary colors/patterns
+  size: 'tiny' | 'small' | 'medium' | 'large';
+  primaryColor: string;
+  markings: readonly string[] | string[];
   
   // Natural home biome
-  nativeBiome: string[]; // Which biomes this species spawns in
+  nativeBiome: readonly string[] | string[];
   
   // Resource drops when hunted/gathered
-  dropItems: Array<{
+  dropItems: readonly Array<{
+    readonly item: string;
+    readonly quantity: number;
+    readonly chance: number;
+  }> | Array<{
     item: string;
     quantity: number;
-    chance: number; // 0.0 to 1.0
+    chance: number;
   }>;
 }
 
