@@ -751,6 +751,212 @@ tasks:
     human_input: true  # STRATEGIC checkpoint - owner decides next direction
 
   # -------------------------------------------------------------------------
+  # PHASE: MESHY GLB VALIDATION - First Real Asset Test
+  # -------------------------------------------------------------------------
+  design_meshy_glb_test_sequence:
+    description: |
+      Design the Meshy GLB validation sequence for HITL review.
+      
+      This is the FIRST REAL use of Meshy API to generate reviewable assets.
+      
+      Required Sequence:
+      1. Static sculptured otter (text-to-3D only)
+      2. Default animated otter (walk/idle from default animations)
+      3. Custom animated otter (attack animation from Meshy library)
+      4. Retextured otter (different fur color - grey variant)
+      5. Diorama integration (all 4 variants placed in biome scene)
+      
+      Prompt Engineering Requirements:
+      - Read client/src/ecs/data/predatorSpecies.ts for otter.meshyPrompt
+      - Use mesh_toolkit services for API calls
+      - Define webhook URLs for completion tracking
+      - Specify animation IDs from catalog (walk=1, attack=4)
+      - Define retexture prompt (grey fur variant)
+      
+      Deliverables:
+      1. Meshy API call specifications (prompts, art styles, animation IDs)
+      2. Webhook handler endpoints (python/scripts/run_webhook_server.py)
+      3. Expected GLB output paths (client/public/models/otter/*)
+      4. HITL review prototype spec (diorama with 4 variants)
+      
+      Acceptance Criteria:
+      - [ ] All 4 GLB variants generate successfully
+      - [ ] Animations play correctly in prototype
+      - [ ] HITL review UI is present and functional
+      - [ ] Owner can rank 1-10 and REJECT/SAVE each variant
+    expected_output: |
+      ## Meshy GLB Test Sequence Design
+      
+      ### API Call Specifications
+      
+      #### 1. Static Sculptured Otter
+      ```python
+      text3d_service.submit_task(
+          species="otter",
+          prompt="sculpture style river otter standing upright...",
+          art_style="sculpture",
+          callback_url="http://0.0.0.0:8000/webhooks/meshy/otter/static"
+      )
+      ```
+      
+      #### 2. Default Animated Otter
+      ```python
+      # After static completes and is rigged
+      animation_service.submit_task(
+          species="otter",
+          model_id=rigged_task_id,
+          animation_id="1",  # Walk
+          callback_url="http://0.0.0.0:8000/webhooks/meshy/otter/walk"
+      )
+      ```
+      
+      #### 3. Custom Animated Otter (Attack)
+      ```python
+      animation_service.submit_task(
+          species="otter",
+          model_id=rigged_task_id,
+          animation_id="4",  # Attack
+          callback_url="http://0.0.0.0:8000/webhooks/meshy/otter/attack"
+      )
+      ```
+      
+      #### 4. Retextured Grey Otter
+      ```python
+      retexture_service.submit_task(
+          species="otter",
+          model_id=base_task_id,
+          prompt="grey fur with white chest, realistic texture",
+          callback_url="http://0.0.0.0:8000/webhooks/meshy/otter/grey"
+      )
+      ```
+      
+      ### Expected File Structure
+      ```
+      client/public/models/otter/
+      ├── static.glb           # Sculptured, no animation
+      ├── walk.glb             # Default walk animation
+      ├── attack.glb           # Custom attack animation
+      └── grey_walk.glb        # Retextured grey variant
+      ```
+      
+      ### HITL Review Prototype
+      - Prototype ID: "meshy_glb_validation"
+      - Extends: biome_selector_diorama
+      - Renders: 4 otter variants in diorama scene
+      - UI: HITL review controls (rating slider, notes, REJECT/SAVE)
+      
+      ### Ready for Implementation
+      - YES with detailed specifications above
+    agent: rendering_engineer
+    context: [validate_biome_prototype]
+    human_input: true
+
+  implement_meshy_glb_pipeline:
+    description: |
+      Implement the Meshy GLB generation pipeline using mesh_toolkit.
+      
+      Scope:
+      - python/scripts/generate_species_pipeline.py modifications
+      - Webhook server setup (run_webhook_server.py)
+      - GLB download and storage to client/public/models/
+      - Manifest updates for tracking
+      
+      This uses EXISTING mesh_toolkit services - no new code needed there.
+      
+      Integration Steps:
+      1. Start webhook server on port 8000
+      2. Submit 4 Meshy tasks in sequence (static → rig → animate x2 + retexture)
+      3. Wait for webhooks, download GLBs
+      4. Update manifest.json for otter species
+      5. Signal prototype that assets are ready
+    expected_output: |
+      ## Pipeline Implementation
+      
+      ### Files Modified/Created
+      - python/scripts/generate_species_pipeline.py: [otter-specific sequence]
+      - python/scripts/run_webhook_server.py: [webhook handlers]
+      - client/public/models/otter/manifest.json: [tracking data]
+      
+      ### Webhook Server
+      - Listening on: http://0.0.0.0:8000
+      - Endpoints: /webhooks/meshy/otter/{static,walk,attack,grey}
+      - Downloads GLBs to: client/public/models/otter/
+      
+      ### Pipeline Status
+      - Static otter: SUCCEEDED (static.glb downloaded)
+      - Rigging: SUCCEEDED (rigged model ready)
+      - Walk animation: SUCCEEDED (walk.glb downloaded)
+      - Attack animation: SUCCEEDED (attack.glb downloaded)
+      - Grey retexture: SUCCEEDED (grey_walk.glb downloaded)
+      
+      ### Ready for Prototype Integration
+      - YES with all 4 GLB files in public/models/otter/
+    agent: integration_specialist
+    context: [design_meshy_glb_test_sequence]
+
+  implement_hitl_review_prototype:
+    description: |
+      Create the HITL review prototype with standardized review UI.
+      
+      This prototype:
+      1. Loads all 4 otter GLB variants
+      2. Renders them in the biome diorama scene
+      3. Provides HITL review controls UNDER the canvas
+      
+      HITL Review UI (standardized for ALL prototypes):
+      - Material-UI Slider (1-10 rating)
+      - Text area for notes
+      - REJECT button (red, destructive)
+      - SAVE button (green, primary)
+      - Always positioned UNDER the R3F canvas
+      
+      This UI component should be REUSABLE for future prototypes.
+    expected_output: |
+      ## HITL Review Prototype
+      
+      ### Components Created
+      - client/src/prototypes/meshy_glb_validation/App.tsx
+      - client/src/components/HITLReviewControls.tsx (REUSABLE)
+      - client/src/prototypes/meshy_glb_validation/OtterVariants.tsx
+      
+      ### HITL Review Controls (Standardized)
+      ```tsx
+      interface HITLReviewData {
+        rating: number;  // 1-10
+        notes: string;
+        decision: 'REJECT' | 'SAVE' | null;
+      }
+      ```
+      
+      ### Prototype Layout
+      ```
+      ┌─────────────────────────────┐
+      │   R3F Canvas (Diorama)      │
+      │   - 4 otter variants        │
+      │   - Biome scene             │
+      │   - Camera controls         │
+      └─────────────────────────────┘
+      ┌─────────────────────────────┐
+      │   HITL Review Controls      │
+      │   [Slider 1────────────10]  │
+      │   [Notes text area______]   │
+      │   [REJECT]  [SAVE]          │
+      └─────────────────────────────┘
+      ```
+      
+      ### Validation
+      - All 4 GLBs load: YES
+      - Animations play: YES
+      - Review UI functional: YES
+      - Data persists on SAVE: YES
+      
+      ### Ready for HITL Review
+      - YES - awaiting owner review
+    agent: rendering_engineer
+    context: [implement_meshy_glb_pipeline]
+    human_input: true  # OWNER MUST REVIEW AND APPROVE
+
+  # -------------------------------------------------------------------------
   # OMEGA: Documentation & Context Recording
   # -------------------------------------------------------------------------
   omega_record_progress:

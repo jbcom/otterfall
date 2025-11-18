@@ -11,6 +11,7 @@ import {
   CircularProgress,
   Button,
 } from '@mui/material';
+import { HITLReviewControls } from '../components/HITLReviewControls';
 import {
   DndContext,
   closestCenter,
@@ -130,13 +131,31 @@ export function PrototypesScreen() {
 
   if (selectedPrototype && PrototypeComponent) {
     return (
-      <Suspense fallback={
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-          <CircularProgress />
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+        <Suspense fallback={
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+            <CircularProgress />
+          </Box>
+        }>
+          <Box sx={{ flex: 1, overflow: 'hidden' }}>
+            <PrototypeComponent onExit={handleExitPrototype} />
+          </Box>
+        </Suspense>
+        
+        {/* HITL Review Controls - Always present under prototypes */}
+        <Box sx={{ flexShrink: 0 }}>
+          <HITLReviewControls
+            onSubmit={(reviewData) => {
+              console.log('[HITL Review]', {
+                prototype: selectedPrototype,
+                ...reviewData,
+              });
+              // TODO: Send to ConPort or CrewAI webhook
+              alert(`Review submitted:\nRating: ${reviewData.rating}/10\nDecision: ${reviewData.decision}`);
+            }}
+          />
         </Box>
-      }>
-        <PrototypeComponent onExit={handleExitPrototype} />
-      </Suspense>
+      </Box>
     );
   }
 
