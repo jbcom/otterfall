@@ -87,22 +87,23 @@ export function RivermarshGame() {
             shadow-camera-bottom={-50}
           />
 
-          <fog attach="fog" args={["#87CEEB", 50, 150]} />
+          <fog attach="fog" args={["#7ab8d4", 30, 120]} />
 
           <Player mobileInput={mobileInput} />
           <MarshlandTerrain />
           <NPCManager />
 
-          <EffectComposer>
+          <EffectComposer multisampling={8}>
             <Bloom
-              intensity={0.5}
-              luminanceThreshold={0.9}
-              luminanceSmoothing={0.9}
+              intensity={0.6}
+              luminanceThreshold={0.8}
+              luminanceSmoothing={0.95}
+              mipmapBlur
             />
             <DepthOfField
-              focusDistance={0.02}
-              focalLength={0.05}
-              bokehScale={3}
+              focusDistance={0.015}
+              focalLength={0.08}
+              bokehScale={2.5}
             />
           </EffectComposer>
         </Canvas>
