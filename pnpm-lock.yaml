@@ -13,9 +13,6 @@ importers:
 
   .:
     dependencies:
-      '@biomejs/biome':
-        specifier: ^2.3.6
-        version: 2.3.6
       '@fontsource/inter':
         specifier: ^5.2.8
         version: 5.2.8
@@ -273,7 +270,7 @@ importers:
         version: 1.1.2(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       vite-plugin-glsl:
         specifier: ^1.5.4
-        version: 1.5.4(esbuild@0.25.12)(vite@7.2.2(@types/node@22.12.0)(jiti@1.21.7)(tsx@4.20.6))
+        version: 1.5.4(esbuild@0.25.12)(vite@7.2.2(@types/node@20.16.11)(jiti@1.21.7)(tsx@4.20.6))
       wouter:
         specifier: ^3.7.1
         version: 3.7.1(react@18.3.1)
@@ -309,8 +306,8 @@ importers:
         specifier: ^1.18.2
         version: 1.18.2
       '@types/node':
-        specifier: 22.12.0
-        version: 22.12.0
+        specifier: 20.16.11
+        version: 20.16.11
       '@types/passport':
         specifier: ^1.0.17
         version: 1.0.17
@@ -328,7 +325,7 @@ importers:
         version: 8.18.1
       '@vitejs/plugin-react':
         specifier: ^4.7.0
-        version: 4.7.0(vite@7.2.2(@types/node@22.12.0)(jiti@1.21.7)(tsx@4.20.6))
+        version: 4.7.0(vite@7.2.2(@types/node@20.16.11)(jiti@1.21.7)(tsx@4.20.6))
       autoprefixer:
         specifier: ^10.4.22
         version: 10.4.22(postcss@8.5.6)
@@ -352,7 +349,7 @@ importers:
         version: 5.6.3
       vite:
         specifier: ^7.2.2
-        version: 7.2.2(@types/node@22.12.0)(jiti@1.21.7)(tsx@4.20.6)
+        version: 7.2.2(@types/node@20.16.11)(jiti@1.21.7)(tsx@4.20.6)
     optionalDependencies:
       bufferutil:
         specifier: ^4.0.9
@@ -450,59 +447,6 @@ packages:
   '@babel/types@7.28.5':
     resolution: {integrity: sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA==}
     engines: {node: '>=6.9.0'}
-
-  '@biomejs/biome@2.3.6':
-    resolution: {integrity: sha512-oqUhWyU6tae0MFsr/7iLe++QWRg+6jtUhlx9/0GmCWDYFFrK366sBLamNM7D9Y+c7YSynUFKr8lpEp1r6Sk7eA==}
-    engines: {node: '>=14.21.3'}
-    hasBin: true
-
-  '@biomejs/cli-darwin-arm64@2.3.6':
-    resolution: {integrity: sha512-P4JWE5d8UayBxYe197QJwyW4ZHp0B+zvRIGCusOm1WbxmlhpAQA1zEqQuunHgSIzvyEEp4TVxiKGXNFZPg7r9Q==}
-    engines: {node: '>=14.21.3'}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@biomejs/cli-darwin-x64@2.3.6':
-    resolution: {integrity: sha512-I4rTebj+F/L9K93IU7yTFs8nQ6EhaCOivxduRha4w4WEZK80yoZ8OAdR1F33m4yJ/NfUuTUbP/Wjs+vKjlCoWA==}
-    engines: {node: '>=14.21.3'}
-    cpu: [x64]
-    os: [darwin]
-
-  '@biomejs/cli-linux-arm64-musl@2.3.6':
-    resolution: {integrity: sha512-oK1NpIXIixbJ/4Tcx40cwiieqah6rRUtMGOHDeK2ToT7yUFVEvXUGRKqH0O4hqZ9tW8TcXNZKfgRH6xrsjVtGg==}
-    engines: {node: '>=14.21.3'}
-    cpu: [arm64]
-    os: [linux]
-
-  '@biomejs/cli-linux-arm64@2.3.6':
-    resolution: {integrity: sha512-JjYy83eVBnvuINZiqyFO7xx72v8Srh4hsgaacSBCjC22DwM6+ZvnX1/fj8/SBiLuUOfZ8YhU2pfq2Dzakeyg1A==}
-    engines: {node: '>=14.21.3'}
-    cpu: [arm64]
-    os: [linux]
-
-  '@biomejs/cli-linux-x64-musl@2.3.6':
-    resolution: {integrity: sha512-QvxB8GHQeaO4FCtwJpJjCgJkbHBbWxRHUxQlod+xeaYE6gtJdSkYkuxdKAQUZEOIsec+PeaDAhW9xjzYbwmOFA==}
-    engines: {node: '>=14.21.3'}
-    cpu: [x64]
-    os: [linux]
-
-  '@biomejs/cli-linux-x64@2.3.6':
-    resolution: {integrity: sha512-ZjPXzy5yN9wusIoX+8Zp4p6cL8r0NzJCXg/4r1KLVveIPXd2jKVlqZ6ZyzEq385WwU3OX5KOwQYLQsOc788waQ==}
-    engines: {node: '>=14.21.3'}
-    cpu: [x64]
-    os: [linux]
-
-  '@biomejs/cli-win32-arm64@2.3.6':
-    resolution: {integrity: sha512-YM7hLHpwjdt8R7+O2zS1Vo2cKgqEeptiXB1tWW1rgjN5LlpZovBVKtg7zfwfRrFx3i08aNZThYpTcowpTlczug==}
-    engines: {node: '>=14.21.3'}
-    cpu: [arm64]
-    os: [win32]
-
-  '@biomejs/cli-win32-x64@2.3.6':
-    resolution: {integrity: sha512-psgNEYgMAobY5h+QHRBVR9xvg2KocFuBKm6axZWB/aD12NWhQjiVFQUjV6wMXhlH4iT0Q9c3yK5JFRiDC/rzHA==}
-    engines: {node: '>=14.21.3'}
-    cpu: [x64]
-    os: [win32]
 
   '@dimforge/rapier3d-compat@0.12.0':
     resolution: {integrity: sha512-uekIGetywIgopfD97oDL5PfeezkFpNhwlzlaEYNOA0N6ghdsOvh/HYjSMek5Q2O1PYvRSDFcqFVJl4r4ZBwOow==}
@@ -1725,8 +1669,8 @@ packages:
   '@types/http-errors@2.0.5':
     resolution: {integrity: sha512-r8Tayk8HJnX0FztbZN7oVqGccWgw98T/0neJphO91KkmOzug1KkofZURD4UaD5uH8AqcFLfdPErnBod0u71/qg==}
 
-  '@types/node@22.12.0':
-    resolution: {integrity: sha512-Fll2FZ1riMjNmlmJOdAyY5pUbkftXslB5DgEzlIuNaiWhXd00FhWxVC/r4yV/4wBb9JfImTu+jiSvXTkJ7F/gA==}
+  '@types/node@20.16.11':
+    resolution: {integrity: sha512-y+cTCACu92FyA5fgQSAI8A1H429g7aSK2HsO7K4XYUWc4dY5IUz55JSDIYT6/VsOLfGy8vmvQYC2hfb0iF16Uw==}
 
   '@types/offscreencanvas@2019.7.3':
     resolution: {integrity: sha512-ieXiYmgSRXUDeOntE1InxjWyvEelZGP63M+cGuquuRLuIKKT1osnkXjxev9B7d1nXSug5vpunx+gNlbVxMlC9A==}
@@ -3457,8 +3401,8 @@ packages:
     resolution: {integrity: sha512-KPHm4VL5dDXKz01UuEd88Df+KzynaohSL9fBh096KWAxSKZQDI2uBrVqtvRM4rwrIrRRKsdLNML/lnaaVSRioA==}
     engines: {node: '>= 0.8'}
 
-  undici-types@6.20.0:
-    resolution: {integrity: sha512-Ny6QZ2Nju20vw1SRHe3d9jVu6gJ+4e3+MMpqu7pqE5HT6WsTSlce++GQmK5UXS8mzV8DSYHrQH+Xrf2jVcuKNg==}
+  undici-types@6.19.8:
+    resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
 
   unpipe@1.0.0:
     resolution: {integrity: sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==}
@@ -3789,41 +3733,6 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
-
-  '@biomejs/biome@2.3.6':
-    optionalDependencies:
-      '@biomejs/cli-darwin-arm64': 2.3.6
-      '@biomejs/cli-darwin-x64': 2.3.6
-      '@biomejs/cli-linux-arm64': 2.3.6
-      '@biomejs/cli-linux-arm64-musl': 2.3.6
-      '@biomejs/cli-linux-x64': 2.3.6
-      '@biomejs/cli-linux-x64-musl': 2.3.6
-      '@biomejs/cli-win32-arm64': 2.3.6
-      '@biomejs/cli-win32-x64': 2.3.6
-
-  '@biomejs/cli-darwin-arm64@2.3.6':
-    optional: true
-
-  '@biomejs/cli-darwin-x64@2.3.6':
-    optional: true
-
-  '@biomejs/cli-linux-arm64-musl@2.3.6':
-    optional: true
-
-  '@biomejs/cli-linux-arm64@2.3.6':
-    optional: true
-
-  '@biomejs/cli-linux-x64-musl@2.3.6':
-    optional: true
-
-  '@biomejs/cli-linux-x64@2.3.6':
-    optional: true
-
-  '@biomejs/cli-win32-arm64@2.3.6':
-    optional: true
-
-  '@biomejs/cli-win32-x64@2.3.6':
-    optional: true
 
   '@dimforge/rapier3d-compat@0.12.0': {}
 
@@ -4941,7 +4850,7 @@ snapshots:
   '@types/body-parser@1.19.6':
     dependencies:
       '@types/connect': 3.4.38
-      '@types/node': 22.12.0
+      '@types/node': 20.16.11
 
   '@types/connect-pg-simple@7.0.3':
     dependencies:
@@ -4951,7 +4860,7 @@ snapshots:
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 22.12.0
+      '@types/node': 20.16.11
 
   '@types/css-font-loading-module@0.0.12': {}
 
@@ -4987,7 +4896,7 @@ snapshots:
 
   '@types/express-serve-static-core@4.19.7':
     dependencies:
-      '@types/node': 22.12.0
+      '@types/node': 20.16.11
       '@types/qs': 6.14.0
       '@types/range-parser': 1.2.7
       '@types/send': 1.2.1
@@ -5009,9 +4918,9 @@ snapshots:
 
   '@types/http-errors@2.0.5': {}
 
-  '@types/node@22.12.0':
+  '@types/node@20.16.11':
     dependencies:
-      undici-types: 6.20.0
+      undici-types: 6.19.8
 
   '@types/offscreencanvas@2019.7.3': {}
 
@@ -5032,13 +4941,13 @@ snapshots:
 
   '@types/pg@8.11.6':
     dependencies:
-      '@types/node': 22.12.0
+      '@types/node': 20.16.11
       pg-protocol: 1.10.3
       pg-types: 4.1.0
 
   '@types/pg@8.15.6':
     dependencies:
-      '@types/node': 22.12.0
+      '@types/node': 20.16.11
       pg-protocol: 1.10.3
       pg-types: 2.2.0
 
@@ -5069,12 +4978,12 @@ snapshots:
 
   '@types/send@1.2.1':
     dependencies:
-      '@types/node': 22.12.0
+      '@types/node': 20.16.11
 
   '@types/serve-static@2.2.0':
     dependencies:
       '@types/http-errors': 2.0.5
-      '@types/node': 22.12.0
+      '@types/node': 20.16.11
 
   '@types/stats.js@0.17.4': {}
 
@@ -5094,7 +5003,7 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 22.12.0
+      '@types/node': 20.16.11
 
   '@use-gesture/core@10.3.1': {}
 
@@ -5109,7 +5018,7 @@ snapshots:
     optionalDependencies:
       react: 18.3.1
 
-  '@vitejs/plugin-react@4.7.0(vite@7.2.2(@types/node@22.12.0)(jiti@1.21.7)(tsx@4.20.6))':
+  '@vitejs/plugin-react@4.7.0(vite@7.2.2(@types/node@20.16.11)(jiti@1.21.7)(tsx@4.20.6))':
     dependencies:
       '@babel/core': 7.28.5
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.5)
@@ -5117,7 +5026,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.27
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
-      vite: 7.2.2(@types/node@22.12.0)(jiti@1.21.7)(tsx@4.20.6)
+      vite: 7.2.2(@types/node@20.16.11)(jiti@1.21.7)(tsx@4.20.6)
     transitivePeerDependencies:
       - supports-color
 
@@ -6689,7 +6598,7 @@ snapshots:
     dependencies:
       random-bytes: 1.0.0
 
-  undici-types@6.20.0: {}
+  undici-types@6.19.8: {}
 
   unpipe@1.0.0: {}
 
@@ -6752,13 +6661,13 @@ snapshots:
       d3-time: 3.1.0
       d3-timer: 3.0.1
 
-  vite-plugin-glsl@1.5.4(esbuild@0.25.12)(vite@7.2.2(@types/node@22.12.0)(jiti@1.21.7)(tsx@4.20.6)):
+  vite-plugin-glsl@1.5.4(esbuild@0.25.12)(vite@7.2.2(@types/node@20.16.11)(jiti@1.21.7)(tsx@4.20.6)):
     dependencies:
-      vite: 7.2.2(@types/node@22.12.0)(jiti@1.21.7)(tsx@4.20.6)
+      vite: 7.2.2(@types/node@20.16.11)(jiti@1.21.7)(tsx@4.20.6)
     optionalDependencies:
       esbuild: 0.25.12
 
-  vite@7.2.2(@types/node@22.12.0)(jiti@1.21.7)(tsx@4.20.6):
+  vite@7.2.2(@types/node@20.16.11)(jiti@1.21.7)(tsx@4.20.6):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.3)
@@ -6767,7 +6676,7 @@ snapshots:
       rollup: 4.53.2
       tinyglobby: 0.2.15
     optionalDependencies:
-      '@types/node': 22.12.0
+      '@types/node': 20.16.11
       fsevents: 2.3.3
       jiti: 1.21.7
       tsx: 4.20.6
