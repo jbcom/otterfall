@@ -32,11 +32,11 @@ class CodeSearchSchema(BaseModel):
 class GrepSearchSchema(BaseModel):
     pattern: str = Field(description="Regex pattern to search for")
     path: str = Field(default=".", description="Path to search in")
-    type: str = Field(default=None, description="File type filter (e.g., 'ts', 'py')")
+    file_type: str | None = Field(default=None, description="File type filter (e.g., 'ts', 'py')")
 
 
 class LSPDiagnosticsSchema(BaseModel):
-    file_path: str = Field(default=None, description="File path to get diagnostics for")
+    file_path: str | None = Field(default=None, description="File path to get diagnostics for")
 
 
 class BashCommandSchema(BaseModel):
@@ -59,8 +59,9 @@ class FileReadTool(BaseTool):
     description: str = "Read contents of a file from the codebase. Use for examining code."
     args_schema: type[BaseModel] = FileReadSchema
 
-    def _run(self, file_path: str, limit: int = 500) -> str:
-        # This will be implemented by calling actual Replit read tool
+    def _run(self, *args: Any, **kwargs: Any) -> str:
+        file_path = kwargs.get('file_path', args[0] if args else '')
+        limit = kwargs.get('limit', args[1] if len(args) > 1 else 500)
         return f"TOOL_CALL:read:{file_path}:{limit}"
 
 
@@ -69,7 +70,9 @@ class FileWriteTool(BaseTool):
     description: str = "Write or overwrite a file in the codebase. Use for creating new files."
     args_schema: type[BaseModel] = FileWriteSchema
 
-    def _run(self, file_path: str, content: str) -> str:
+    def _run(self, *args: Any, **kwargs: Any) -> str:
+        file_path = kwargs.get('file_path', args[0] if args else '')
+        content = kwargs.get('content', args[1] if len(args) > 1 else '')
         return f"TOOL_CALL:write:{file_path}:{len(content)}"
 
 
@@ -78,7 +81,8 @@ class FileEditTool(BaseTool):
     description: str = "Edit a file by replacing exact text. Use for modifying existing code."
     args_schema: type[BaseModel] = FileEditSchema
 
-    def _run(self, file_path: str, old_string: str, new_string: str) -> str:
+    def _run(self, *args: Any, **kwargs: Any) -> str:
+        file_path = kwargs.get('file_path', args[0] if args else '')
         return f"TOOL_CALL:edit:{file_path}"
 
 
@@ -87,7 +91,9 @@ class CodeSearchTool(BaseTool):
     description: str = "Search the entire codebase with natural language. Use for finding relevant code."
     args_schema: type[BaseModel] = CodeSearchSchema
 
-    def _run(self, query: str, search_paths: list[str] = None) -> str:
+    def _run(self, *args: Any, **kwargs: Any) -> str:
+        query = kwargs.get('query', args[0] if args else '')
+        search_paths = kwargs.get('search_paths', args[1] if len(args) > 1 else None)
         paths = ",".join(search_paths) if search_paths else "all"
         return f"TOOL_CALL:search_codebase:{query}:{paths}"
 
@@ -97,8 +103,11 @@ class GrepSearchTool(BaseTool):
     description: str = "Search for patterns using regex. Use for finding specific text in files."
     args_schema: type[BaseModel] = GrepSearchSchema
 
-    def _run(self, pattern: str, path: str = ".", type: str = None) -> str:
-        return f"TOOL_CALL:grep:{pattern}:{path}:{type or 'all'}"
+    def _run(self, *args: Any, **kwargs: Any) -> str:
+        pattern = kwargs.get('pattern', args[0] if args else '')
+        path = kwargs.get('path', args[1] if len(args) > 1 else '.')
+        file_type = kwargs.get('file_type', args[2] if len(args) > 2 else None)
+        return f"TOOL_CALL:grep:{pattern}:{path}:{file_type or 'all'}"
 
 
 class LSPDiagnosticsTool(BaseTool):
@@ -106,7 +115,8 @@ class LSPDiagnosticsTool(BaseTool):
     description: str = "Get TypeScript/Python errors and warnings. Use for code quality checks."
     args_schema: type[BaseModel] = LSPDiagnosticsSchema
 
-    def _run(self, file_path: str = None) -> str:
+    def _run(self, *args: Any, **kwargs: Any) -> str:
+        file_path = kwargs.get('file_path', args[0] if args else None)
         return f"TOOL_CALL:lsp:{file_path or 'all'}"
 
 
@@ -115,7 +125,8 @@ class BashCommandTool(BaseTool):
     description: str = "Execute bash commands. Use for running tests, builds, or system operations."
     args_schema: type[BaseModel] = BashCommandSchema
 
-    def _run(self, command: str, description: str) -> str:
+    def _run(self, *args: Any, **kwargs: Any) -> str:
+        command = kwargs.get('command', args[0] if args else '')
         return f"TOOL_CALL:bash:{command}"
 
 
@@ -124,7 +135,9 @@ class FigmaDesignTool(BaseTool):
     description: str = "Get design context and generated code from Figma. Use for implementing UI from designs."
     args_schema: type[BaseModel] = FigmaDesignContextSchema
 
-    def _run(self, nodeId: str, fileKey: str, clientLanguages: str = "typescript", clientFrameworks: str = "react") -> str:
+    def _run(self, *args: Any, **kwargs: Any) -> str:
+        nodeId = kwargs.get('nodeId', args[0] if args else '')
+        fileKey = kwargs.get('fileKey', args[1] if len(args) > 1 else '')
         return f"TOOL_CALL:figma:{fileKey}:{nodeId}"
 
 

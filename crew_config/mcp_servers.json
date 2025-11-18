@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "material_ui": {
+      "command": "npx",
+      "args": ["-y", "@mui/mcp-server"],
+      "env": {}
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp-server"],
+      "env": {}
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "env": {
+        "UPSTASH_REDIS_REST_URL": "${UPSTASH_REDIS_REST_URL}",
+        "UPSTASH_REDIS_REST_TOKEN": "${UPSTASH_REDIS_REST_TOKEN}"
+      }
+    },
+    "vite_react": {
+      "command": "npx",
+      "args": ["-y", "vite-react-mcp"],
+      "env": {}
+    },
+    "context_portal": {
+      "command": "npx",
+      "args": ["-y", "context-portal"],
+      "env": {}
+    }
+  }
+}
