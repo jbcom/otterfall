@@ -3,11 +3,14 @@
 ## Usage
 
 ```bash
+# Install dependencies
+cd python/crew_agents && uv run crewai install
+
 # Run full crew
-uv run python python/crew_agents
+cd python/crew_agents && uv run crewai run
 
 # Or via process-compose
-process-compose up
+process-compose up rivermarsh_crew
 ```
 
 ## Architecture
