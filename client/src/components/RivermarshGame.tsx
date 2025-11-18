@@ -6,6 +6,7 @@ import { MarshlandTerrain } from "./MarshlandTerrain";
 import { NPCManager } from "./OtterNPC";
 import { VirtualJoysticks } from "./VirtualJoysticks";
 import { GameUI } from "./GameUI";
+import { SoundManager } from "./SoundManager";
 import { EffectComposer, Bloom, DepthOfField } from "@react-three/postprocessing";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 
@@ -107,6 +108,7 @@ export function RivermarshGame() {
         </Canvas>
 
         <GameUI />
+        <SoundManager />
         
         {isMobile && <VirtualJoysticks onMove={handleMove} onLook={handleLook} />}
       </KeyboardControls>
