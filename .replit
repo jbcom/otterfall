@@ -5,7 +5,7 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
-packages = ["SDL2", "alsa-lib", "at-spi2-atk", "atk", "cairo", "chromium", "dbus", "gdk-pixbuf", "gitFull", "glib", "gtk3", "jq", "libgbm", "libxkbcommon", "libyaml", "mesa", "nspr", "nss", "pango", "playwright-driver", "psmisc", "sdl3", "tree", "xcodebuild", "xorg.libX11", "xorg.libXcomposite", "xorg.libXcursor", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXi", "xorg.libXrandr", "xorg.libxcb", "zlib", "direnv", "process-compose"]
+packages = ["SDL2", "alsa-lib", "at-spi2-atk", "atk", "cairo", "chromium", "dbus", "direnv", "gdk-pixbuf", "gitFull", "glib", "gtk3", "jq", "libgbm", "libxkbcommon", "libyaml", "mesa", "nspr", "nss", "pango", "playwright-driver", "process-compose", "psmisc", "sdl3", "tree", "xcodebuild", "xorg.libX11", "xorg.libXcomposite", "xorg.libXcursor", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXi", "xorg.libXrandr", "xorg.libxcb", "zlib"]
 
 [workflows]
 runButton = "Project"
