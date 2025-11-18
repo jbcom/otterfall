@@ -1,0 +1,254 @@
+import { useRef, useMemo } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useRivermarsh, OtterNPC as OtterNPCType } from "@/lib/stores/useRivermarsh";
+import * as THREE from "three";
+import { Billboard, Text } from "@react-three/drei";
+
+interface OtterNPCProps {
+  npc: OtterNPCType;
+}
+
+export function OtterNPC({ npc }: OtterNPCProps) {
+  const meshRef = useRef<THREE.Group>(null);
+  const { player, startDialogue, damageNPC, removeNPC } = useRivermarsh();
+  
+  const color = useMemo(() => {
+    switch (npc.type) {
+      case "friendly":
+        return "#8B6914";
+      case "hostile":
+        return "#8B0000";
+      case "neutral":
+        return "#696969";
+      case "merchant":
+        return "#DAA520";
+      case "quest_giver":
+        return "#4169E1";
+      default:
+        return "#8B6914";
+    }
+  }, [npc.type]);
+
+  const targetPosition = useRef(new THREE.Vector3(...npc.position));
+  const wanderTimer = useRef(0);
+
+  useFrame((state, delta) => {
+    if (!meshRef.current) return;
+
+    wanderTimer.current += delta;
+
+    if (npc.type === "hostile") {
+      const playerPos = new THREE.Vector3(...player.position);
+      const npcPos = new THREE.Vector3(...npc.position);
+      const distance = playerPos.distanceTo(npcPos);
+
+      if (distance < 15) {
+        const direction = playerPos.clone().sub(npcPos).normalize();
+        meshRef.current.position.add(direction.multiplyScalar(delta * 2));
+        
+        meshRef.current.lookAt(playerPos);
+
+        if (distance < 1.5) {
+          console.log(`${npc.name} attacks!`);
+        }
+      } else if (wanderTimer.current > 3) {
+        targetPosition.current.set(
+          npc.position[0] + (Math.random() - 0.5) * 5,
+          npc.position[1],
+          npc.position[2] + (Math.random() - 0.5) * 5
+        );
+        wanderTimer.current = 0;
+      }
+    } else if (npc.type === "friendly" || npc.type === "neutral") {
+      if (wanderTimer.current > 5) {
+        targetPosition.current.set(
+          npc.position[0] + (Math.random() - 0.5) * 10,
+          npc.position[1],
+          npc.position[2] + (Math.random() - 0.5) * 10
+        );
+        wanderTimer.current = 0;
+      }
+
+      const direction = targetPosition.current.clone().sub(meshRef.current.position);
+      if (direction.length() > 0.5) {
+        direction.normalize();
+        meshRef.current.position.add(direction.multiplyScalar(delta * 0.5));
+        meshRef.current.lookAt(targetPosition.current);
+      }
+    }
+
+    const playerPos = new THREE.Vector3(...player.position);
+    const npcPos = meshRef.current.position;
+    const distance = playerPos.distanceTo(npcPos);
+
+    if (distance < 3 && (npc.type === "friendly" || npc.type === "quest_giver" || npc.type === "merchant")) {
+      meshRef.current.children.forEach((child) => {
+        if (child.userData.isInteractPrompt) {
+          child.visible = true;
+        }
+      });
+    } else {
+      meshRef.current.children.forEach((child) => {
+        if (child.userData.isInteractPrompt) {
+          child.visible = false;
+        }
+      });
+    }
+  });
+
+  const handleInteract = () => {
+    if (npc.dialogue) {
+      startDialogue(npc.id, npc.name, npc.dialogue);
+    }
+  };
+
+  return (
+    <group ref={meshRef} position={npc.position}>
+      <mesh castShadow position={[0, 0.4, 0]}>
+        <boxGeometry args={[0.6, 0.8, 1]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      
+      <mesh castShadow position={[0, 0.9, 0.3]}>
+        <sphereGeometry args={[0.25, 16, 16]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+
+      <mesh castShadow position={[-0.1, 0.95, 0.45]}>
+        <sphereGeometry args={[0.05, 8, 8]} />
+        <meshStandardMaterial color="#000000" />
+      </mesh>
+      <mesh castShadow position={[0.1, 0.95, 0.45]}>
+        <sphereGeometry args={[0.05, 8, 8]} />
+        <meshStandardMaterial color="#000000" />
+      </mesh>
+
+      <mesh castShadow position={[0, 0.75, 0.55]}>
+        <sphereGeometry args={[0.08, 8, 8]} />
+        <meshStandardMaterial color="#2F4F4F" />
+      </mesh>
+
+      <Billboard position={[0, 1.8, 0]}>
+        <Text
+          fontSize={0.3}
+          color="#ffffff"
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.02}
+          outlineColor="#000000"
+        >
+          {npc.name}
+        </Text>
+      </Billboard>
+
+      {npc.health !== undefined && (
+        <Billboard position={[0, 1.5, 0]}>
+          <mesh>
+            <planeGeometry args={[1, 0.1]} />
+            <meshBasicMaterial color="#ff0000" />
+          </mesh>
+          <mesh position={[(npc.health / (npc.maxHealth || 100) - 1) / 2, 0, 0.01]}>
+            <planeGeometry args={[npc.health / (npc.maxHealth || 100), 0.1]} />
+            <meshBasicMaterial color="#00ff00" />
+          </mesh>
+        </Billboard>
+      )}
+
+      <Billboard position={[0, 2.2, 0]} userData={{ isInteractPrompt: true }} visible={false}>
+        <Text
+          fontSize={0.2}
+          color="#ffff00"
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.02}
+          outlineColor="#000000"
+        >
+          [E] Interact
+        </Text>
+      </Billboard>
+    </group>
+  );
+}
+
+export function NPCManager() {
+  const { npcs, spawnNPC } = useRivermarsh();
+
+  useMemo(() => {
+    const initialNPCs: OtterNPCType[] = [
+      {
+        id: "elder_moss",
+        name: "Elder Moss",
+        faction: "elder_council",
+        position: [10, 1, 10],
+        type: "quest_giver",
+        dialogue: [
+          "Greetings, young otter! Welcome to Rivermarsh.",
+          "We face dark times... the Marsh Raiders have been stealing our fish!",
+          "Would you help us recover our stolen supplies?",
+        ],
+        quests: ["recover_fish"],
+      },
+      {
+        id: "trader_pebble",
+        name: "Trader Pebble",
+        faction: "river_clan",
+        position: [-10, 1, 15],
+        type: "merchant",
+        dialogue: [
+          "Looking to trade? I have the finest shells and stones!",
+          "Fresh fish for sale, caught this morning!",
+        ],
+      },
+      {
+        id: "raider_1",
+        name: "Marsh Raider",
+        faction: "marsh_raiders",
+        position: [40, 1, 30],
+        type: "hostile",
+        health: 50,
+        maxHealth: 50,
+      },
+      {
+        id: "raider_2",
+        name: "Marsh Raider",
+        faction: "marsh_raiders",
+        position: [-35, 1, -25],
+        type: "hostile",
+        health: 50,
+        maxHealth: 50,
+      },
+      {
+        id: "friendly_1",
+        name: "Splash",
+        faction: "river_clan",
+        position: [5, 1, -10],
+        type: "friendly",
+        dialogue: [
+          "Beautiful day for swimming!",
+          "Watch out for the raiders near the eastern marsh.",
+        ],
+      },
+      {
+        id: "friendly_2",
+        name: "Ripple",
+        faction: "river_clan",
+        position: [-15, 1, -15],
+        type: "friendly",
+        dialogue: [
+          "Have you seen the water lilies? They're blooming!",
+          "I love this place. So peaceful... usually.",
+        ],
+      },
+    ];
+
+    initialNPCs.forEach((npc) => spawnNPC(npc));
+  }, [spawnNPC]);
+
+  return (
+    <>
+      {npcs.map((npc) => (
+        <OtterNPC key={npc.id} npc={npc} />
+      ))}
+    </>
+  );
+}
