@@ -116,6 +116,7 @@ npm run dev
 
 ## References
 
-- [PARALLEL_DEVELOPMENT.md](../PARALLEL_DEVELOPMENT.md) - Overall strategy
+- [parallel_development.md](../.ruler/parallel_development.md) - Overall strategy
 - [crewai_usage.md](./crewai_usage.md) - CrewAI task execution
+- [workflow_configuration.md](../../python/crew_agents/.ruler/workflow_configuration.md) - Agent hierarchy
 - [shared/contracts/README.md](../../shared/contracts/README.md) - Contract specs

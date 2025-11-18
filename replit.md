@@ -49,16 +49,16 @@ Key architectural standards include an ECS + Rendering system with mandatory exe
 **Python Tooling (Build-time only):**
 - Meshy SDK: for 3D model, texture, and animation generation (Webhook-only architecture)
 - CrewAI agents: for autonomous game system building
-  - See [docs/architecture/crewai_usage.md](docs/architecture/crewai_usage.md) for full usage guide
+  - See `python/crew_agents/.ruler/workflow_configuration.md` for agent hierarchy
+  - See `docs/.ruler/parallel_development.md` for development workflow
   - Managed by `process-compose.yaml` for long-running background tasks
 - `uv` for package management
 - `httpx`, `tenacity`, `rich`, `playwright` (Meshy SDK dependencies)
 - `crewai[anthropic]`, `litellm` (CrewAI dependencies)
 - `pytest` for testing
 
-**CrewAI Task Orchestration:**
-All CrewAI agents run as background processes via `process-compose`. See [CrewAI Usage Guide](docs/architecture/crewai_usage.md) for:
-- Task execution workflow
-- Log monitoring and debugging
-- Environment configuration
-- Integration with frontend prototypes
+**Documentation Structure:**
+All documentation uses nested `.ruler/` directories per the Ruler standard:
+- Root `AGENTS.md` - Executive summary (highest precedence)
+- Component-specific rules in their respective `.ruler/` directories
+- Run `ruler apply --nested` to generate concatenated instructions for AI agentss
