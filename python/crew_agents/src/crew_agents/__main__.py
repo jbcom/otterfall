@@ -337,20 +337,15 @@ def filter_tools(tools_list, keywords):
 def create_openrouter_llm():
     """
     Configure LLM using OpenRouter.
-    Based on working examples from CrewAI + OpenRouter integrations.
+    Environment variables are set by process-compose.yaml.
     """
     openrouter_key = os.getenv("OPENROUTER_API_KEY")
     
     if openrouter_key:
-        # Set environment variables for LiteLLM
-        os.environ["OPENROUTER_API_KEY"] = openrouter_key
-        os.environ["OPENAI_MODEL_NAME"] = "openrouter/anthropic/claude-3.5-sonnet"
-        os.environ["OPENAI_API_BASE"] = "https://openrouter.ai/api/v1"
-        
         print("✓ Using OpenRouter with Claude 3.5 Sonnet")
         print("  Model: openrouter/anthropic/claude-3.5-sonnet")
         
-        # Return None - CrewAI will auto-detect from env vars
+        # Return None - CrewAI will auto-detect from env vars set by process-compose
         return None
     
     # Fallback to direct Anthropic
