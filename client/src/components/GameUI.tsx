@@ -280,15 +280,24 @@ function QuestLogPanel() {
 }
 
 function DialogueBox() {
-  const { activeDialogue } = useRivermarsh();
+  const { activeDialogue, nextDialogue, endDialogue } = useRivermarsh();
 
   if (!activeDialogue) return null;
 
   const currentMessage = activeDialogue.messages[activeDialogue.currentIndex];
   const isLastMessage = activeDialogue.currentIndex === activeDialogue.messages.length - 1;
 
+  const handleClick = () => {
+    if (isLastMessage) {
+      endDialogue();
+    } else {
+      nextDialogue();
+    }
+  };
+
   return (
     <div
+      onClick={handleClick}
       style={{
         position: "absolute",
         bottom: "100px",
@@ -303,6 +312,7 @@ function DialogueBox() {
         maxWidth: "700px",
         border: "3px solid rgba(139, 105, 20, 0.9)",
         pointerEvents: "auto",
+        cursor: "pointer",
       }}
     >
       <div style={{ fontWeight: "bold", color: "#DAA520", fontSize: "18px", marginBottom: "15px" }}>
@@ -310,7 +320,7 @@ function DialogueBox() {
       </div>
       <div style={{ fontSize: "15px", lineHeight: "1.6", marginBottom: "15px" }}>{currentMessage}</div>
       <div style={{ fontSize: "12px", color: "#aaa", textAlign: "right" }}>
-        {isLastMessage ? "Press ENTER to close" : "Press ENTER to continue"}
+        {isLastMessage ? "Tap to close" : "Tap to continue"}
       </div>
     </div>
   );
