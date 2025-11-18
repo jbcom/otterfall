@@ -750,16 +750,90 @@ tasks:
     context: [validate_creature_prototype]
     human_input: true  # STRATEGIC checkpoint - owner decides next direction
 
+  # ==============================================================================
+# REUSABLE WORKFLOW PATTERNS (YAML Anchors)
+# ==============================================================================
+
+# TDD Prototype Workflow - Standard 4-phase pattern for any prototype
+x-tdd-prototype-workflow: &tdd_prototype_workflow
+  design_phase:
+    agent: rendering_engineer
+    context_required: true
+    human_input: true
+    outputs:
+      - technical_design_document
+      - component_dependency_graph
+      - acceptance_criteria_checklist
+  
+  implementation_phase:
+    agent: rendering_engineer
+    context_from_design: true
+    outputs:
+      - component_files
+      - shader_files
+      - integration_points
+  
+  validation_phase:
+    agent: qa_validator
+    context_from_implementation: true
+    human_input: true  # HITL approval checkpoint
+    outputs:
+      - validation_report
+      - performance_metrics
+      - approval_recommendation
+  
+  documentation_phase:
+    agent: technical_writer
+    context_from_all: true
+    outputs:
+      - updated_conport
+      - integration_guide
+      - handoff_notes
+
+# Meshy Asset Generation Workflow - Reusable for any species
+x-meshy-asset-workflow: &meshy_asset_workflow
+  api_sequence:
+    - text3d_static
+    - rigging
+    - animation_default
+    - animation_custom
+    - retexture_variant
+  
+  webhook_config:
+    base_url: "http://0.0.0.0:8000/webhooks/meshy"
+    endpoints:
+      - /static
+      - /rigged
+      - /animated_default
+      - /animated_custom
+      - /retextured
+  
+  output_structure:
+    base_path: "client/public/models"
+    files:
+      - static.glb
+      - walk.glb
+      - attack.glb
+      - variant.glb
+    manifest: manifest.json
+
+# ==============================================================================
+# TASK DEFINITIONS
+# ==============================================================================
+tasks:
+  # ... (keep existing tasks until Meshy section)
+
   # -------------------------------------------------------------------------
   # PHASE: MESHY GLB VALIDATION - First Real Asset Test
   # -------------------------------------------------------------------------
   design_meshy_glb_test_sequence:
+    <<: *tdd_prototype_workflow.design_phase
     description: |
       Design the Meshy GLB validation sequence for HITL review.
       
       This is the FIRST REAL use of Meshy API to generate reviewable assets.
       
-      Required Sequence:
+      Required Sequence (from reusable workflow):
       1. Static sculptured otter (text-to-3D only)
       2. Default animated otter (walk/idle from default animations)
       3. Custom animated otter (attack animation from Meshy library)
@@ -852,8 +926,11 @@ tasks:
     human_input: true
 
   implement_meshy_glb_pipeline:
+    <<: *tdd_prototype_workflow.implementation_phase
     description: |
       Implement the Meshy GLB generation pipeline using mesh_toolkit.
+      
+      Uses reusable Meshy workflow (see x-meshy-asset-workflow anchor).
       
       Scope:
       - python/scripts/generate_species_pipeline.py modifications
@@ -895,6 +972,7 @@ tasks:
     context: [design_meshy_glb_test_sequence]
 
   implement_hitl_review_prototype:
+    <<: *tdd_prototype_workflow.validation_phase
     description: |
       Create the HITL review prototype with standardized review UI.
       
