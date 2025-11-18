@@ -1,0 +1,53 @@
+ecs_data_design:
+  description: |
+    Review and enhance the ECS data layer in client/src/ecs/.
+    Ensure all component types are correct, species data is complete,
+    and entity factories follow best practices. Validate TypeScript types.
+  expected_output: "TypeScript files with zero LSP errors, complete species taxonomy, proper component initializers"
+  agent: ecs_architect
+
+yuka_ai_integration:
+  description: |
+    Implement Yuka AI integration for creature behaviors.
+    Set up YukaSyncSystem to sync Yuka entity positions with R3F meshes.
+    Create steering behaviors for predators (chase, evade, wander, flock).
+    Implement state machines for prey (idle, flee, forage, hide).
+  expected_output: "Working Yuka AI system with smooth creature behaviors, properly synced with R3F rendering"
+  agent: yuka_ai_engineer
+
+terrain_water_rendering:
+  description: |
+    Build chunked terrain system with LOD and procedural generation.
+    Implement AdvancedWater.tsx with Gerstner waves, caustics, depth-based color.
+    Add post-processing: bloom, DOF, god rays, color grading.
+    Ensure 60fps on mid-tier mobile devices.
+  expected_output: "Beautiful, performant marshland with advanced water shaders, running at 60fps on mobile"
+  agent: rendering_engineer
+
+quest_dialogue_systems:
+  description: |
+    Implement quest system with JSON-based quest data and progression tracking.
+    Build dialogue tree system with NPC conversations and branching choices.
+    Create inventory management with item pickup, use, and crafting.
+    Integrate with existing Zustand stores.
+  expected_output: "Working quest, dialogue, and inventory systems integrated with game UI"
+  agent: systems_engineer
+
+performance_testing:
+  description: |
+    Run Playwright tests to validate UI interactions and game state.
+    Profile rendering performance and identify bottlenecks.
+    Validate TypeScript types across all files (zero LSP errors).
+    Test on simulated mobile devices (60fps target).
+  expected_output: "Performance report, automated test suite passing, TypeScript validation clean"
+  agent: qa_tester
+
+architecture_review:
+  description: |
+    Review all code changes against replit.md architecture.
+    Ensure folder structure matches mandated layout (src/components, src/systems, src/scenes).
+    Use Context7 to fetch latest docs for React, Three.js, Zustand, R3F.
+    Update project documentation (replit.md, ARCHITECTURE.md) with any changes.
+    Provide final code review and approval.
+  expected_output: "Architecture compliance report, updated documentation, final approval or revision requests"
+  agent: chief_architect

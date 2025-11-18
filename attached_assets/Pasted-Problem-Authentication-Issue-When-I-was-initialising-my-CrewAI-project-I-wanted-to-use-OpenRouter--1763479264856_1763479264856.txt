@@ -1,0 +1,54 @@
+Problem: Authentication Issue
+When I was initialising my CrewAI project, I wanted to use OpenRouter API as my LLM provider. Something I noticed is that there aren’t many guides on how to configure the API connection to OpenRouter.
+
+Following the standard setup, I ran into an authentication issue that completely stopped me in my tracks.
+
+raise Exception(f"An error occurred while running the crew: {e}")
+Exception: An error occurred while running the crew: litellm.AuthenticationError: AuthenticationError: OpenrouterException - {"error":{"message":"No auth credentials found","code":401}}
+I searched up and realised I was not the only one who encountered integration issues with OpenRouter, but none of the fixes online seemed to work for me. Initially, I thought it was an issue with my API key, so I tested my key manually, and it turned out to be working just fine.
+
+After some debugging and a lot of researching, I reasised the issue was not the API key itself, but how litellm is reading the config. If you encountered this issue as well, perhaps this simple fix will save you hours of troubleshooting!
+
+Solution
+I shall not bore you — lets jump straight into the fix.
+
+If you are trying to change your default LLM to OpenRouter, ensure that your .env file is configured correctly:
+
+OPENAI_API_BASE=https://openrouter.ai/api/v1 # based on your openrouter's url
+OPENAI_MODEL_NAME=openrouter/qwen/qwen-2-7b-instruct:free # append openrouter/your_model
+OPENROUTER_API_KEY=your_api_key  # your key here
+This .env file is based on the Qwen2 7B model which I am using for this project, so check the API documentation for your model. The key things to note here are:
+
+the variable for API key should be OPENROUTER_API_KEY, unlike the url and model variable
+remember to append openrouter/ for your OPENAI_MODEL_NAME
+These configurations should now work alright! If you are curious to find out what went wrong, I documented it below.
+
+What went wrong?
+The API configurations are supposed to be stored in our .env files. The issue lies in my environment naming.
+
+My initial (incorrect) .env file looked like this:
+
+OPENAI_API_BASE=https://openrouter.ai/api/v1
+OPENAI_MODEL_NAME=openrouter/qwen/qwen-2-7b-instruct:free
+OPENAI_API_KEY=my_api_key
+This was what I arrived at after researching online on how to configure the .env variables. The issue here is with OPENAI_API_KEY.
+
+Some articles online recommended using OPENAI_API_KEY for the .env config, and perhaps it did work for them, but somehow it didnt work for me 😢
+
+I went on to take a look at how the API key is being used to call the API endpoint in the litellm library and noticed this in the main.py file:
+
+Press enter or click to view image in full size
+
+inside litellm main.py fle
+This should be the cause of the error, as litellm is expecting OPENROUTER_API_KEY for OpenRouter.
+
+Changing the API key variable from OPENAI_API_KEY -> OPENROUTER_API_KEY should fix this issue for you.
+
+However, the url and model name can remain as OPENAI_API_BASE and OPENAI_MODEL_NAME.
+
+Closing Thoughts
+If you made it here, I hope this article helped you fix your integration issues with CrewAI and OpenRouter!
+
+Since this is my first ever article, I might have made some mistakes or not explained things as clearly as I could. If there is anything confusing or if there is a better approach, I would love to hear your feedback.
+
+Thanks a lot for reading!

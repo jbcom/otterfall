@@ -1,34 +1,42 @@
 import { World } from 'miniplex';
-import type { BiomeComponent } from './components/BiomeComponent';
-import type { WeatherComponent } from './components/WeatherComponent';
-import type { TimeOfDayComponent } from './components/TimeOfDayComponent';
-import type { SpeciesComponent } from './components/SpeciesComponent';
-import type { CombatComponent } from './components/CombatComponent';
-import type { EquipmentComponent } from './components/EquipmentComponent';
-import type { BiomeResourceComponent } from './components/BiomeResourceComponent';
-import type { AIComponent } from './components/AIComponent';
-import type { MovementComponent } from './components/MovementComponent';
-import type { AnimationComponent } from './components/AnimationComponent';
+import * as Components from './components';
 
-export interface Entity {
-  id: string;
-  type: 'predator' | 'prey' | 'resource' | 'world';
-  
-  // Optional components
-  species?: SpeciesComponent;
-  combat?: CombatComponent;
-  equipment?: EquipmentComponent;
-  movement?: MovementComponent;
-  ai?: AIComponent;
-  animation?: AnimationComponent;
-  biomeResource?: BiomeResourceComponent;
-  
-  // World singleton components
-  biome?: BiomeComponent;
-  weather?: WeatherComponent;
-  timeOfDay?: TimeOfDayComponent;
-}
+// Define the Entity type using all available components
+type Entity = Partial<{
+  [K in keyof typeof Components]: (typeof Components)[K]
+}>;
 
+// Create and export the main world instance
 export const world = new World<Entity>();
 
-console.log('[ECS] Miniplex world initialized');
+// Create entity queries for common use cases
+export const queries = {
+  // Physical entities that need movement updates
+  physical: world.query(e => e.transform && e.physical),
+  
+  // AI-controlled creatures
+  creatures: world.query(e => e.transform && e.species && e.aiControl),
+  
+  // Entities with health
+  living: world.query(e => e.health),
+  
+  // Interactable objects/NPCs
+  interactables: world.query(e => e.transform && e.interactable),
+  
+  // Visual entities that need rendering
+  visible: world.query(e => e.transform && e.visual),
+  
+  // Specific creature types
+  predators: world.query(e => e.species?.type === 'predator'),
+  prey: world.query(e => e.species?.type === 'prey')
+};
+
+// Type guard helpers
+export const hasPhysics = (e: Entity): e is Entity & Required<Pick<Entity, 'transform' | 'physical'>> => 
+  !!e.transform && !!e.physical;
+
+export const hasAI = (e: Entity): e is Entity & Required<Pick<Entity, 'transform' | 'species' | 'aiControl'>> =>
+  !!e.transform && !!e.species && !!e.aiControl;
+
+export const isInteractable = (e: Entity): e is Entity & Required<Pick<Entity, 'transform' | 'interactable'>> =>
+  !!e.transform && !!e.interactable;

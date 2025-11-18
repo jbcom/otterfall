@@ -13,37 +13,7 @@ expertMode = true
 
 [nix]
 channel = "stable-25_05"
-packages = [
-  "chromium",
-  "SDL2",
-  "sdl3",
-  "jq",
-  "psmisc",
-  "tree",
-  "xorg.libxcb",
-  "xorg.libX11",
-  "xorg.libXcomposite",
-  "xorg.libXdamage",
-  "xorg.libXext",
-  "xorg.libXfixes",
-  "xorg.libXrandr",
-  "mesa",
-  "alsa-lib",
-  "nss",
-  "nspr",
-  "dbus",
-  "atk",
-  "at-spi2-atk",
-  "glib",
-  "pango",
-  "cairo",
-  "libxkbcommon",
-  "gtk3",
-  "gdk-pixbuf",
-  "xorg.libXcursor",
-  "xorg.libXi",
-  "libgbm",
-]
+packages = ["SDL2", "alsa-lib", "at-spi2-atk", "atk", "cairo", "chromium", "dbus", "gdk-pixbuf", "glib", "gtk3", "jq", "libgbm", "libxkbcommon", "libyaml", "mesa", "nspr", "nss", "pango", "psmisc", "sdl3", "tree", "xorg.libX11", "xorg.libXcomposite", "xorg.libXcursor", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXi", "xorg.libXrandr", "xorg.libxcb"]
 
 [workflows]
 runButton = "Project"

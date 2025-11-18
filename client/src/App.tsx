@@ -1,8 +1,15 @@
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import { RivermarshGame } from "./components/RivermarshGame";
-import "@fontsource/inter";
+import { theme } from './theme';
 
 function App() {
-  return <RivermarshGame />;
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <RivermarshGame />
+    </ThemeProvider>
+  );
 }
 
 export default App;
