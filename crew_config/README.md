@@ -32,12 +32,12 @@ Manager Agent (Coordinator)
 - Screenshot capture
 - **Package**: `@playwright/mcp-server`
 
-### 3. **Context7 (Upstash)** 🧠
-- Advanced context management
-- Distributed state
-- Real-time sync
+### 3. **Context7** 🧠
+- Up-to-date library documentation
+- Fetches latest API docs automatically
+- Version-specific code examples
 - **Package**: `@upstash/context7-mcp`
-- **Requires**: UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
+- **Requires**: No API keys needed!
 
 ### 4. **Vite-React MCP** ⚛️
 - React dev tooling
