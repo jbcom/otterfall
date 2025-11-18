@@ -17,9 +17,27 @@ Always include:
 
 ## Cross-References
 
-Use relative paths for internal links:
+### Internal Documentation Links
+Use relative paths from current file:
 ```markdown
-See [ECS Patterns](../.ruler/ecs_patterns.md) for details.
+<!-- From docs/.ruler/writing_style.md -->
+See [ECS Patterns](../../.ruler/ecs_patterns.md) for details.
+
+<!-- From client/.ruler/rendering_pipeline.md -->
+See [React Three Fiber Guidelines](../../.ruler/react_three_fiber.md).
+```
+
+### Code References
+Link to specific files in the codebase:
+```markdown
+See [`world.ts`](../../client/src/ecs/world.ts) for Entity type definition.
+```
+
+### External Documentation
+Use Context7 MCP tool for up-to-date library docs:
+```markdown
+<!-- Instead of linking to potentially outdated docs -->
+Consult latest React Three Fiber documentation via Context7.
 ```
 
 ## Clarity

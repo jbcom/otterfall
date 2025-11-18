@@ -1,0 +1,63 @@
+
+# Shared Contracts & Types
+
+## Purpose
+The `shared/` directory contains TypeScript types and contracts used by both frontend and backend.
+
+## Contract Pattern
+
+All data interchange must use typed contracts:
+
+### Species Contract
+```typescript
+// shared/contracts/SpeciesContract.ts
+export interface SpeciesContract {
+  id: string;
+  common_name: string;
+  scientific_name: string;
+  mass_kg: number;
+  max_speed_kph: number;
+  // ... see file for complete spec
+}
+```
+
+### Usage in Frontend
+```typescript
+import type { SpeciesContract } from '@/shared/contracts/SpeciesContract';
+
+const otterSpec: SpeciesContract = {
+  id: 'otter',
+  common_name: 'River Otter',
+  scientific_name: 'Lontra canadensis',
+  // ...
+};
+```
+
+### Usage in Backend
+```python
+# Python backend validates against TypeScript contracts
+# JSON data must conform to SpeciesContract schema
+```
+
+## Backend Data Directory
+
+### DFU Analysis
+`shared/backend/dfu_analysis/` contains:
+- **parsers/**: Python scripts to extract Daggerfall Unity data
+- **data/**: Raw DFU JSON exports
+- **mappings/**: DFU fantasy creatures → real species
+
+See [CURATED_DATA_INDEX.md](../backend/dfu_analysis/CURATED_DATA_INDEX.md).
+
+### ECS World
+`shared/backend/ecs_world/` will contain:
+- Component schemas exported for Python validation
+- Mock data fixtures
+- Integration tests
+
+## Integration Rules
+
+1. **TypeScript is source of truth** for contracts
+2. **Python validates** against TypeScript schemas
+3. **Never duplicate** type definitions across languages
+4. **Generate** Python models from TypeScript if needed

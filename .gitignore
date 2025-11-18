@@ -14,6 +14,7 @@ __MACOSX/
 .upm/
 .config/
 .cache/
+replit.nix
 
 ########################################
 # Node / TypeScript (client + server)
@@ -21,6 +22,11 @@ __MACOSX/
 
 # Dependencies
 node_modules/
+.pnpm-store
+
+# Build outputs
+dist
+*.tsbuildinfo
 
 # Common Node logs
 npm-debug.log*
@@ -36,6 +42,8 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+__pycache__
+*.pyc
 
 # Virtual environments
 .venv/
@@ -50,6 +58,8 @@ env/
 .dmypy.json
 .pyre/
 .pytype/
+.pytest_cache
+.ruff_cache
 
 ########################################
 # Environment Files
@@ -57,6 +67,7 @@ env/
 .env
 .env.*
 !.env.example
+.env.local
 
 ########################################
 # Logs
@@ -70,18 +81,103 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # START Ruler Generated Files
-# This block is managed by Ruler - do not edit manually
-AGENTS.md
+/.aider.conf.yml
+/.aider.conf.yml.bak
+/.clinerules
+/.clinerules.bak
+/.cursor/mcp.json
+/.cursor/mcp.json.bak
+/.kilocode/mcp.json
+/.kilocode/mcp.json.bak
+/.kilocode/rules/ruler_kilocode_instructions.md
+/.kilocode/rules/ruler_kilocode_instructions.md.bak
+/.mcp.json
+/.mcp.json.bak
+/.vscode/mcp.json
+/.vscode/mcp.json.bak
+/.windsurf/mcp_config.json
+/.windsurf/mcp_config.json.bak
+/.zed/settings.json
+/.zed/settings.json.bak
+/AGENTS.md
+/AGENTS.md.bak
+/CLAUDE.md
+/CLAUDE.md.bak
+/client/.aider.conf.yml
+/client/.aider.conf.yml.bak
+/client/.clinerules
+/client/.clinerules.bak
+/client/.kilocode/rules/ruler_kilocode_instructions.md
+/client/.kilocode/rules/ruler_kilocode_instructions.md.bak
+/client/AGENTS.md
+/client/AGENTS.md.bak
+/client/CLAUDE.md
+/client/CLAUDE.md.bak
+/docs/.aider.conf.yml
+/docs/.aider.conf.yml.bak
+/docs/.clinerules
+/docs/.clinerules.bak
+/docs/.kilocode/rules/ruler_kilocode_instructions.md
+/docs/.kilocode/rules/ruler_kilocode_instructions.md.bak
+/docs/AGENTS.md
+/docs/AGENTS.md.bak
+/docs/CLAUDE.md
+/docs/CLAUDE.md.bak
+/python/.aider.conf.yml
+/python/.aider.conf.yml.bak
+/python/.clinerules
+/python/.clinerules.bak
+/python/.kilocode/rules/ruler_kilocode_instructions.md
+/python/.kilocode/rules/ruler_kilocode_instructions.md.bak
+/python/AGENTS.md
+/python/AGENTS.md.bak
+/python/CLAUDE.md
+/python/CLAUDE.md.bak
+/python/crew_agents/.aider.conf.yml
+/python/crew_agents/.aider.conf.yml.bak
+/python/crew_agents/.clinerules
+/python/crew_agents/.clinerules.bak
+/python/crew_agents/.kilocode/rules/ruler_kilocode_instructions.md
+/python/crew_agents/.kilocode/rules/ruler_kilocode_instructions.md.bak
+/python/crew_agents/AGENTS.md
+/python/crew_agents/AGENTS.md.bak
+/python/crew_agents/CLAUDE.md
+/python/crew_agents/CLAUDE.md.bak
+/python/mesh_toolkit/.aider.conf.yml
+/python/mesh_toolkit/.aider.conf.yml.bak
+/python/mesh_toolkit/.clinerules
+/python/mesh_toolkit/.clinerules.bak
+/python/mesh_toolkit/.kilocode/rules/ruler_kilocode_instructions.md
+/python/mesh_toolkit/.kilocode/rules/ruler_kilocode_instructions.md.bak
+/python/mesh_toolkit/AGENTS.md
+/python/mesh_toolkit/AGENTS.md.bak
+/python/mesh_toolkit/CLAUDE.md
+/python/mesh_toolkit/CLAUDE.md.bak
+/shared/.aider.conf.yml
+/shared/.aider.conf.yml.bak
+/shared/.clinerules
+/shared/.clinerules.bak
+/shared/.kilocode/rules/ruler_kilocode_instructions.md
+/shared/.kilocode/rules/ruler_kilocode_instructions.md.bak
+/shared/AGENTS.md
+/shared/AGENTS.md.bak
+/shared/CLAUDE.md
+/shared/CLAUDE.md.bak
+# END Ruler Generated Files
+
+# Ruler generated files (agent-specific outputs)
 CLAUDE.md
 .aider.conf.yml
-.clinerules
 .kilocode/
-.skillz/
-.claude/
-# END Ruler Generated Files
+
+# Legacy backup files
+replit.md.backup
 
 ########################################
 # IDE / Project Settings
 ########################################
 .vscode/
+!.vscode/settings.json
 .idea/
+.vscode/*
+.idea

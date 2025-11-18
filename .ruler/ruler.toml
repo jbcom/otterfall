@@ -7,6 +7,17 @@ default_agents = ["copilot", "claude", "cursor", "cline", "windsurf"]
 
 # Enable nested rule loading for component-specific instructions
 # This allows .ruler/ directories throughout the project tree
+# 
+# Rule loading order:
+# 1. /AGENTS.md (root, executive summary)
+# 2. /.ruler/AGENTS.md (cross-cutting standards)
+# 3. /.ruler/*.md (ECS patterns, shaders, R3F guidelines)
+# 4. /client/.ruler/AGENTS.md (client-specific)
+# 5. /client/.ruler/*.md (rendering pipeline)
+# 6. /python/.ruler/AGENTS.md (Python backend)
+# 7. /python/crew_agents/.ruler/*.md (CrewAI workflows)
+# 8. /docs/.ruler/*.md (documentation standards)
+# 9. /shared/.ruler/AGENTS.md (contracts & types)
 nested = true
 
 # --- Global MCP Server Configuration ---
