@@ -20,6 +20,7 @@ from crew_agents.adapters import (
     GitHubAdapter,
     ViteAdapter,
     PlaywrightAdapter,
+    ConPortAdapter,
     FilesystemAdapter,
     KnowledgeAdapter,
     DocsAdapter,
@@ -61,34 +62,88 @@ def create_mcp_tools():
     @tool("conport_get_schema")
     def conport_get_schema() -> str:
         """Get ConPort schema showing all available tools and their parameters"""
-        # This would call the actual ConPort MCP server
-        # For now, return placeholder indicating integration needed
-        return "ConPort MCP integration: Use get_conport_schema to discover tool names and parameters"
+        adapter, error = _get_adapter('conport', ConPortAdapter)
+        if error:
+            return error
+        try:
+            result = adapter.execute(action="get_schema")
+            return result.to_string()
+        except Exception as e:
+            return f"Error: {e}"
     
     @tool("conport_read_projectbrief")
     def conport_read_projectbrief() -> str:
         """Read projectbrief.md from ConPort custom data (category: 'ProjectBrief', key: 'content')"""
-        return "ConPort MCP integration: Use get_custom_data(category='ProjectBrief', key='content')"
+        adapter, error = _get_adapter('conport', ConPortAdapter)
+        if error:
+            return error
+        try:
+            result = adapter.execute(
+                action="read_custom_data",
+                category="ProjectBrief",
+                key="content"
+            )
+            return result.to_string()
+        except Exception as e:
+            return f"Error: {e}"
     
     @tool("conport_get_product_context")
     def conport_get_product_context() -> str:
         """Get overall project goals, features, and architecture from ConPort"""
-        return "ConPort MCP integration: Use get_product_context()"
+        adapter, error = _get_adapter('conport', ConPortAdapter)
+        if error:
+            return error
+        try:
+            result = adapter.execute(action="get_product_context")
+            return result.to_string()
+        except Exception as e:
+            return f"Error: {e}"
     
     @tool("conport_get_active_context")
     def conport_get_active_context() -> str:
         """Get current working focus, recent changes, open issues from ConPort"""
-        return "ConPort MCP integration: Use get_active_context()"
+        adapter, error = _get_adapter('conport', ConPortAdapter)
+        if error:
+            return error
+        try:
+            result = adapter.execute(action="get_active_context")
+            return result.to_string()
+        except Exception as e:
+            return f"Error: {e}"
     
     @tool("conport_log_decision")
     def conport_log_decision(summary: str, rationale: str = None, tags: str = None) -> str:
         """Log architectural or implementation decision to ConPort"""
-        return f"ConPort MCP integration: Use log_decision(summary='{summary}', rationale='{rationale}', tags=[{tags}])"
+        adapter, error = _get_adapter('conport', ConPortAdapter)
+        if error:
+            return error
+        try:
+            tag_list = [t.strip() for t in tags.split(",")] if tags else []
+            result = adapter.execute(
+                action="log_decision",
+                summary=summary,
+                rationale=rationale,
+                tags=tag_list
+            )
+            return result.to_string()
+        except Exception as e:
+            return f"Error: {e}"
     
     @tool("conport_update_progress")
     def conport_update_progress(status: str, description: str) -> str:
         """Update progress entry in ConPort"""
-        return f"ConPort MCP integration: Use log_progress(status='{status}', description='{description}')"
+        adapter, error = _get_adapter('conport', ConPortAdapter)
+        if error:
+            return error
+        try:
+            result = adapter.execute(
+                action="log_progress",
+                status=status,
+                description=description
+            )
+            return result.to_string()
+        except Exception as e:
+            return f"Error: {e}"
     
     # Git tools (read-only operations)
     @tool("git_status")

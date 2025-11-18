@@ -46,18 +46,6 @@
       ],
       "type": "stdio"
     },
-    "conport": {
-      "command": "uvx",
-      "args": [
-        "--from",
-        "context-portal-mcp",
-        "conport-mcp"
-      ],
-      "env": {
-        "CONPORT_FILES": "project_brief.md"
-      },
-      "type": "stdio"
-    },
     "git": {
       "command": "uvx",
       "args": [
