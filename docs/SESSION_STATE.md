@@ -6,17 +6,22 @@
 
 ## Current Status
 
-**Phase:** Planning & Architecture (NOT implementing yet)
+**Phase:** Prototyping (Building working prototypes to validate technical approach)
 
 **What User Has Seen & Approved:**
 - ✅ Zero asset generation constraint (ONE otter PoC only)
 - ✅ Broad planning approach (all 4 systems before implementation)
+- ✅ Stop documentation work until gameplay direction approved
+- ✅ Build prototypes system with Material UI
+- ✅ Move hardcoded game to all_assets_hardcoded prototype
+- ✅ Build biome_selector_diorama with SDF rendering
 
 **What User Has NOT Yet Seen:**
-- ❌ Daggerfall Unity integration strategy (architect approved, user pending)
-- ❌ Visual rendering pipeline docs (architect approved, user pending)
-- ❌ Storyboard mockups (architect approved, user pending)
-- ❌ Proper docs/ structure (in progress, not yet shown to user)
+- ❌ Prototypes Screen UI (built but not demonstrated)
+- ❌ biome_selector_diorama rendering (built but not demonstrated)
+- ❌ Daggerfall Unity integration strategy (deferred)
+- ❌ Visual rendering pipeline docs (deferred)
+- ❌ Storyboard mockups (deferred)
 
 **What Architect Has Reviewed:**
 - ✅ CrewAI tooling (PASS with lazy init)
@@ -70,38 +75,56 @@
    - Gap Audit (priority order identified)
    - All architect approved
 
-3. ✅ Daggerfall Unity Integration Plan
-   - DFU data extraction strategy
-   - Species mapping approach
-   - CrewAI parser design
-   - Architect approved
+3. ✅ Prototypes System
+   - PrototypesScreen with Material UI + @dnd-kit drag
+   - Manifest-driven prototype discovery
+   - all_assets_hardcoded (migrated existing game)
+   - biome_selector_diorama (ECS-driven SDF rendering)
+   - Architect reviewed and approved
 
-4. ✅ Visual Rendering Pipeline Plan
-   - Render pass order defined
-   - Lighting/shadow contracts
-   - Performance budgets per layer
-   - Architect approved
+4. ✅ ECS World Setup
+   - Fixed Entity type definitions
+   - Added BiomeComponent, WeatherComponent, TimeOfDayComponent
+   - useBiomeECS hook for prototype state management
 
-5. ✅ Decision Tracking System
+5. ✅ SDF Rendering Prototype
+   - SDFGround (raymarched ground with biome colors)
+   - SDFSky (raymarched sky with gyroscopic horizon)
+   - BiomeControls (Material UI control panel)
+   - Dynamic biome/weather/time updates
+   - Diorama camera view
+
+6. ✅ Decision Tracking System
    - DECISION_LOG.md created
    - SESSION_STATE.md created (this file)
 
 ---
 
-## Pending Work (Awaiting User Approval)
+## Pending Work (Awaiting User Feedback)
 
-### Immediate Next Steps
-1. Create proper docs/ structure (standards/, architecture/, daggerfall_integration/, storyboards/)
-2. Write detailed integration docs (DFU data ingestion, rendering pipeline)
-3. Generate visual mockups (4 key scenarios, UI concepts)
-4. Create concise replit.md that references docs/
+### User to Test/Review
+1. **Prototypes Screen**: Load application, should see draggable list of prototypes
+2. **all_assets_hardcoded**: Select first prototype, should see original game with Exit button
+3. **biome_selector_diorama**: Select second prototype, should see:
+   - Diorama camera view (angled down)
+   - SDF ground with biome colors
+   - SDF sky with horizon
+   - Control panel (top-left) for biome/weather/time
+   - Dynamic updates when controls change
 
-### Implementation Phase (NOT STARTED)
-- Core simulation loop (TimeSystem, WeatherSystem, etc.)
-- Yuka integration (install package, bridges, behaviors)
-- Rendering layer (WorldRenderer, post-processing)
-- UI layer (HUD, inventory, dialogue)
-- Testing (unit, integration, performance)
+### Known Issues
+- 5 LSP errors (minor import/export issues, not blocking functionality)
+- Possible rendering performance issues (untested on mobile)
+- Control panel may need better UX (needs user feedback)
+
+### Deferred Work (Per User Request)
+- Documentation (until gameplay direction approved)
+- Daggerfall Unity integration (until prototypes validated)
+- Visual mockups/storyboards (until prototypes validated)
+- Core simulation loop implementation
+- Yuka AI integration
+- Production rendering pipeline
+- Full UI layer (HUD, inventory, dialogue)
 
 ---
 
