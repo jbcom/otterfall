@@ -28,7 +28,9 @@ merge_strategy = "merge"
 [gitignore]
 enabled = true
 
-# --- MCP Server Definitions (mirrored from crew_config/mcp_servers.json) ---
+# --- MCP Server Definitions (Shared by ALL agents) ---
+# Run 'ruler apply --nested' to generate .mcp.json for CrewAI
+# All IDE agents (Cursor, Claude, etc.) AND CrewAI agents use this same pool
 
 [mcp_servers.material-ui]
 command = "npx"

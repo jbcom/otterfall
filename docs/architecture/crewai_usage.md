@@ -237,7 +237,13 @@ Orchestration config with dependencies, restarts, and logging.
 
 CrewAI uses **native MCP integration** - no custom adapters needed!
 
-Tools are loaded directly from [`crew_config/mcp_servers.json`](rag://rag_source_0):
+All MCP servers are defined in [`.ruler/ruler.toml`](../.ruler/ruler.toml) and shared across:
+- **IDE Agents**: Cursor, Claude, Cline, Windsurf, etc.
+- **CrewAI Agents**: Technical Director, ECS Architect, etc.
+
+Run `ruler apply --nested` to generate `.mcp.json` from the Ruler config.
+
+Available MCP servers:
 
 - **ConPort**: Context Portal for project knowledge (6 tools)
 - **Git**: Version control operations (2 tools)
