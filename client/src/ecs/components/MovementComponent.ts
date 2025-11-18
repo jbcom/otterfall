@@ -15,7 +15,7 @@ export interface MovementComponent {
   // Position and velocity
   position: [number, number, number];
   velocity: [number, number, number];
-  rotation: number; // Y-axis rotation in radians
+  rotation: [number, number, number, number]; // Quaternion (x, y, z, w)
   
   // Movement stats
   walkSpeed: number;        // Base speed (m/s)

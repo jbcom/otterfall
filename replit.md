@@ -178,19 +178,29 @@ Achieved via:
 
 ## Current Implementation Status (Nov 18, 2025)
 
-### What Needs to Change
+### ✅ ECS Data Layer COMPLETE (Type-Safe)
+- **Species Data**: 13 predators + 15 prey with full stats (health, attacks, movement, AI personalities)
+- **Component Initializers**: Centralized defaults for Combat, Movement, AI, Equipment, Animation
+- **Attack Normalization**: Helper functions add missing attack properties (type, knockback, stun, animation)
+- **Entity Factories**: createPredator(), createPrey(), createBiomeResource() using component initializers
+- **Biome Resources**: 9 gatherable types (cattails, berries, mushrooms, etc.) with spawn rules
+- **Yuka AI Setup**: Type declarations, manager class, and bridge pattern ready for integration
+
+### 🔧 What Needs to Change
 - **Camera**: Currently first-person, needs to be diorama/angled-down view
 - **Input**: Currently keyboard-focused with custom KeyboardInputBridge, needs ecctrl + nipplejs mobile-first
 - **State**: Currently split across multiple stores, needs consolidation into single useGameStore
-- **Folder structure**: Doesn't match mandated structure
+- **Folder structure**: Doesn't match mandated structure (src/components, src/systems, src/scenes)
 - **Terrain/Water**: Single meshes, needs chunking and advanced shader-based water
+- **ECS Systems**: Need to implement YukaSyncSystem, TimeSystem, WeatherSystem, SpawnSystem, CombatSystem
 
-### Salvageable Elements
+### 💾 Salvageable Elements
 - NPC data structures and dialogue system scaffolding
 - Quest framework and faction reputation logic
 - Skill/equipment/inventory data models
 - Audio assets and sound management
 - UI component library (Radix + Tailwind)
+- Complete species taxonomy with Meshy prompts
 
 ### External Dependencies
 

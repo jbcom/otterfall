@@ -1,6 +1,8 @@
 import { world } from '../world';
 import { PREDATOR_SPECIES_DATA, PredatorSpecies } from '../data/predatorSpecies';
 import type { Entity } from '../world';
+import { initializeCombat, initializeEquipment, initializeAI, initializeAnimation, initializeMovement } from './componentInitializers';
+import { normalizeAttack } from '../data/attackHelpers';
 
 export interface CreatePredatorOptions {
   species: PredatorSpecies;
@@ -12,7 +14,16 @@ export function createPredator(options: CreatePredatorOptions): Entity {
   const speciesDef = PREDATOR_SPECIES_DATA[options.species];
   const level = options.level ?? 1;
   
-  // Create ECS entity
+  // Normalize and scale attacks by level
+  const scaledAttacks = speciesDef.attacks.map(atk => {
+    const normalized = normalizeAttack(atk as any);
+    return {
+      ...normalized,
+      damage: normalized.damage * (1 + (level - 1) * 0.1) // 10% per level
+    };
+  });
+  
+  // Create ECS entity with proper component initialization
   const entity: Entity = {
     id: crypto.randomUUID(),
     type: 'predator',
@@ -24,65 +35,36 @@ export function createPredator(options: CreatePredatorOptions): Entity {
       meshyArtStyle: speciesDef.meshyArtStyle,
       size: speciesDef.size,
       primaryColor: speciesDef.primaryColor,
-      markings: speciesDef.markings,
-      nativeBiome: speciesDef.nativeBiome,
-      dropItems: speciesDef.dropItems
+      markings: [...speciesDef.markings], // Convert readonly to mutable
+      nativeBiome: [...speciesDef.nativeBiome],
+      dropItems: speciesDef.dropItems.map(item => ({ ...item })) // Deep copy
     },
     
-    combat: {
+    combat: initializeCombat({
       health: speciesDef.baseHealth,
       maxHealth: speciesDef.baseHealth,
-      stamina: 100,
-      maxStamina: 100,
-      staminaRegen: 5,
-      attacks: speciesDef.attacks.map((atk: any) => ({
-        ...atk,
-        damage: atk.damage * (1 + (level - 1) * 0.1) // 10% per level
-      }))
-    },
+      attacks: scaledAttacks
+    }),
     
-    equipment: {
-      head: null,
-      neck: null,
-      body: null,
-      legs: null,
-      feet: null,
-      leftPaw: null,
-      rightPaw: null,
-      tail: null
-    },
+    equipment: initializeEquipment(),
     
-    movement: {
-      position: [...options.position],
-      velocity: [0, 0, 0],
-      rotation: [0, 0, 0, 1],
+    movement: initializeMovement({
+      position: options.position,
       walkSpeed: speciesDef.walkSpeed,
       runSpeed: speciesDef.runSpeed,
       swimSpeed: speciesDef.swimSpeed,
       climbSpeed: speciesDef.climbSpeed,
       jumpHeight: speciesDef.jumpHeight,
-      mass: speciesDef.mass,
-      isGrounded: true,
-      currentLocomotion: 'idle'
-    },
+      mass: speciesDef.mass
+    }),
     
-    ai: {
-      currentState: 'idle',
+    ai: initializeAI({
       personality: speciesDef.personality,
       aggressionLevel: speciesDef.aggressionLevel,
-      currentTarget: null,
-      lastKnownTargetPosition: null,
-      homePosition: [...options.position],
-      memory: []
-    },
+      homePosition: options.position
+    }),
     
-    animation: {
-      currentAnimation: 0,
-      previousAnimation: null,
-      blendWeight: 1.0,
-      animationSpeed: 1.0,
-      looping: true
-    }
+    animation: initializeAnimation()
   };
 
   // Add to ECS world

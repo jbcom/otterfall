@@ -66,11 +66,7 @@ export interface SpeciesComponent {
   nativeBiome: readonly string[] | string[];
   
   // Resource drops when hunted/gathered
-  dropItems: readonly Array<{
-    readonly item: string;
-    readonly quantity: number;
-    readonly chance: number;
-  }> | Array<{
+  dropItems: Array<{
     item: string;
     quantity: number;
     chance: number;

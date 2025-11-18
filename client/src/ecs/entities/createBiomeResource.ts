@@ -1,6 +1,7 @@
 import { world } from '../world';
 import { BIOME_RESOURCES_DATA, BiomeResourceType } from '../data/biomeResources';
 import type { Entity } from '../world';
+import { initializeMovement } from './componentInitializers';
 
 export interface CreateBiomeResourceOptions {
   type: BiomeResourceType;
@@ -18,13 +19,13 @@ export function createBiomeResource(options: CreateBiomeResourceOptions): Entity
       type: options.type,
       name: resourceDef.name,
       visualModel: resourceDef.visualModel,
-      biomes: resourceDef.biomes,
+      biomes: [...resourceDef.biomes],
       gatherSkillRequired: resourceDef.gatherSkillRequired,
       gatherTime: resourceDef.gatherTime,
       minQuantity: resourceDef.minQuantity,
       maxQuantity: resourceDef.maxQuantity,
       respawnTime: resourceDef.respawnTime,
-      dropItems: resourceDef.dropItems,
+      dropItems: resourceDef.dropItems.map(item => ({ ...item })),
       currentQuantity: Math.floor(
         resourceDef.minQuantity + 
         Math.random() * (resourceDef.maxQuantity - resourceDef.minQuantity)
@@ -34,19 +35,15 @@ export function createBiomeResource(options: CreateBiomeResourceOptions): Entity
       harvesters: []
     },
     
-    movement: {
-      position: [...options.position],
-      velocity: [0, 0, 0],
-      rotation: [0, 0, 0, 1],
+    movement: initializeMovement({
+      position: options.position,
       walkSpeed: 0,
       runSpeed: 0,
       swimSpeed: 0,
       climbSpeed: 0,
       jumpHeight: 0,
-      mass: 1,
-      isGrounded: true,
-      currentLocomotion: 'idle'
-    }
+      mass: 1
+    })
   };
 
   world.add(entity);

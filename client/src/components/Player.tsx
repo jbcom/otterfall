@@ -101,7 +101,7 @@ export function Player() {
 
       if (targetNPC) {
         const baseDamage = 10;
-        const weaponBonus = player.equipped.weapon?.stats.attack || 0;
+        const weaponBonus = player.equipped.weapon?.stats?.attack || 0;
         const totalDamage = baseDamage + weaponBonus;
         
         console.log(`Attacking ${targetNPC.name} for ${totalDamage} damage!`);

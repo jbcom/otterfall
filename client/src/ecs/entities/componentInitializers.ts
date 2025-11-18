@@ -83,7 +83,7 @@ export function initializeAI(options: {
     
     // State tracking
     target: null,
-    homePosition: options.homePosition,
+    homePosition: [...options.homePosition], // Deep copy to prevent shared references
     patrolPoints: [],
     currentPatrolIndex: 0,
     
@@ -106,10 +106,27 @@ export function initializeAI(options: {
 export function initializeAnimation(): AnimationComponent {
   return {
     currentAnimation: 0, // Idle animation
-    previousAnimation: null,
-    transitionProgress: 0,
+    animationTime: 0,
     animationSpeed: 1.0,
-    looping: true
+    previousAnimation: null,
+    blendProgress: 0,
+    blendDuration: 0.2,
+    animations: {
+      idle: [0, 11, 12],
+      walk: 1,
+      run: 14,
+      swim: 1,
+      jump: 13,
+      fall: 13,
+      attack: [4],
+      hit: 7,
+      death: 8,
+      eat: 31,
+      drink: 31,
+      sleep: 38
+    },
+    isLooping: true,
+    isPaused: false
   };
 }
 
@@ -121,19 +138,30 @@ export function initializeMovement(options: {
   climbSpeed: number;
   jumpHeight: number;
   mass: number;
+  rotation?: [number, number, number, number];
+  velocity?: [number, number, number];
 }): MovementComponent {
   return {
-    position: options.position,
-    velocity: [0, 0, 0],
-    rotation: [0, 0, 0, 1],
+    position: [...options.position], // Deep copy to prevent shared references
+    velocity: options.velocity ? [...options.velocity] : [0, 0, 0], // Honor caller or default to stationary
+    rotation: options.rotation ? [...options.rotation] : [0, 0, 0, 1], // Honor caller or default
     walkSpeed: options.walkSpeed,
     runSpeed: options.runSpeed,
     swimSpeed: options.swimSpeed,
     climbSpeed: options.climbSpeed,
     jumpHeight: options.jumpHeight,
     mass: options.mass,
+    currentMode: 'walk',
     isGrounded: true,
-    currentLocomotion: 'idle'
+    isInWater: false,
+    canClimb: options.climbSpeed > 0,
+    waterDepth: 0,
+    speedMultiplier: 1.0,
+    drag: 0.15,
+    gravity: -9.8,
+    targetPosition: null,
+    pathToTarget: [],
+    avoidanceRadius: 0.5
   };
 }
 
