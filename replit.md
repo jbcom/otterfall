@@ -48,7 +48,7 @@ Key architectural standards include an ECS + Rendering system with mandatory exe
 
 **Python Tooling (Build-time only):**
 - Meshy SDK: for 3D model, texture, and animation generation (Webhook-only architecture)
-- CrewAI agents: for autonomous game system building
+- CrewAI agents: for autonomous game system building (see [docs/architecture/crewai_usage.md](docs/architecture/crewai_usage.md))
 - `uv` for package management
 - `httpx`, `tenacity`, `rich`, `playwright` (Meshy SDK dependencies)
 - `crewai[anthropic]`, `litellm` (CrewAI dependencies)
