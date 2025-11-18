@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { subscribeWithSelector } from "zustand/middleware";
+import { subscribeWithSelector, persist } from "zustand/middleware";
 
 export type OtterFaction = "river_clan" | "marsh_raiders" | "lone_wanderers" | "elder_council" | "neutral";
 export type QuestStatus = "available" | "active" | "completed" | "failed";
@@ -122,7 +122,8 @@ export interface GameState {
 }
 
 export const useRivermarsh = create<GameState>()(
-  subscribeWithSelector((set, get) => ({
+  persist(
+    subscribeWithSelector((set, get) => ({
     player: {
       position: [0, 1, 0],
       rotation: [0, 0],
@@ -526,5 +527,22 @@ export const useRivermarsh = create<GameState>()(
           return npc;
         }),
       })),
-  }))
+    })),
+    {
+      name: 'rivermarsh-game-state',
+      partialize: (state) => ({
+        player: {
+          ...state.player,
+          position: state.player.position,
+          rotation: state.player.rotation,
+          stats: state.player.stats,
+          inventory: state.player.inventory,
+          equipped: state.player.equipped,
+          activeQuests: state.player.activeQuests,
+          completedQuests: state.player.completedQuests,
+          factionReputation: state.player.factionReputation,
+        },
+      }),
+    }
+  )
 );

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { subscribeWithSelector } from "zustand/middleware";
+import { subscribeWithSelector, persist } from "zustand/middleware";
 
 export type GamePhase = "ready" | "playing" | "ended";
 
@@ -13,7 +13,8 @@ interface GameState {
 }
 
 export const useGame = create<GameState>()(
-  subscribeWithSelector((set) => ({
+  persist(
+    subscribeWithSelector((set) => ({
     phase: "ready",
     
     start: () => {
@@ -39,5 +40,9 @@ export const useGame = create<GameState>()(
         return {};
       });
     }
-  }))
+    })),
+    {
+      name: 'rivermarsh-game-phase',
+    }
+  )
 );

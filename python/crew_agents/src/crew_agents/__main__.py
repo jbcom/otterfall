@@ -20,7 +20,6 @@ from crew_agents.adapters import (
     GitHubAdapter,
     ViteAdapter,
     PlaywrightAdapter,
-    DatabaseAdapter,
     FilesystemAdapter,
     KnowledgeAdapter,
     DocsAdapter,

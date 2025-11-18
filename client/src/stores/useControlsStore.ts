@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 interface ControlsState {
   movement: {
@@ -26,7 +27,9 @@ interface ControlsState {
   toggleDebugLogging: () => void;
 }
 
-export const useControlsStore = create<ControlsState>((set, get) => ({
+export const useControlsStore = create<ControlsState>()(
+  persist(
+    (set, get) => ({
   movement: { x: 0, y: 0 },
   camera: { x: 0, y: 0, azimuth: 0 },
   actions: {
@@ -72,4 +75,10 @@ export const useControlsStore = create<ControlsState>((set, get) => ({
   resetMovement: () => set({ movement: { x: 0, y: 0 } }),
   resetCamera: () => set((state) => ({ camera: { x: 0, y: 0, azimuth: state.camera.azimuth } })),
   toggleDebugLogging: () => set((state) => ({ debugLogging: !state.debugLogging })),
-}));
+    }),
+    {
+      name: 'rivermarsh-controls',
+      partialize: (state) => ({ debugLogging: state.debugLogging }),
+    }
+  )
+);

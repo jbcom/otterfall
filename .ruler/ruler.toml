@@ -1,4 +1,3 @@
-
 # Ruler Configuration for Rivermarsh Game Development
 # Cross-platform AI agent instructions and MCP server definitions
 
@@ -64,10 +63,6 @@ args = ["-y", "@modelcontextprotocol/server-github"]
 
 [mcp_servers.github.env]
 GITHUB_PERSONAL_ACCESS_TOKEN = "${GITHUB_PERSONAL_ACCESS_TOKEN}"
-
-[mcp_servers.postgres]
-command = "npx"
-args = ["-y", "@modelcontextprotocol/server-postgres", "${DATABASE_URL}"]
 
 [mcp_servers.memory]
 command = "npx"
