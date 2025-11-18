@@ -31,8 +31,8 @@ processes:
       - "PYTHONUNBUFFERED=1"
 
   terrain_water_rendering:
-    command: "uv run python -m crew_agents --task terrain_water_rendering"
-    working_dir: "./python/crew_agents"
+    command: "cd python/crew_agents && uv run crewai run --task terrain_water_rendering"
+    working_dir: "."
     depends_on:
       ecs_component_schemas:
         condition: process_completed_successfully
@@ -47,8 +47,8 @@ processes:
       - "PYTHONUNBUFFERED=1"
 
   quest_dialogue_systems:
-    command: "uv run python -m crew_agents --task quest_dialogue_systems"
-    working_dir: "./python/crew_agents"
+    command: "cd python/crew_agents && uv run crewai run --task quest_dialogue_systems"
+    working_dir: "."
     depends_on:
       ecs_component_schemas:
         condition: process_completed_successfully
@@ -65,8 +65,8 @@ processes:
       - "PYTHONUNBUFFERED=1"
 
   performance_testing:
-    command: "uv run python -m crew_agents --task performance_testing"
-    working_dir: "./python/crew_agents"
+    command: "cd python/crew_agents && uv run crewai run --task performance_testing"
+    working_dir: "."
     depends_on:
       yuka_ai_integration:
         condition: process_completed_successfully
@@ -85,8 +85,8 @@ processes:
       - "PYTHONUNBUFFERED=1"
 
   architecture_review:
-    command: "uv run python -m crew_agents --task architecture_review"
-    working_dir: "./python/crew_agents"
+    command: "cd python/crew_agents && uv run crewai run --task architecture_review"
+    working_dir: "."
     depends_on:
       performance_testing:
         condition: process_completed_successfully

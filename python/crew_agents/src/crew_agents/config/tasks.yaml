@@ -1,0 +1,19 @@
+
+context_analysis:
+  description: |
+    ALPHA TASK: Read ConPort context before any work begins.
+    Use get_conport_schema, read projectbrief.md, fetch product context.
+    Identify blockers, dependencies, missing information.
+  expected_output: "Context analysis report with blockers and dependencies"
+
+ecs_data_design:
+  description: |
+    Review and enhance ECS data layer in client/src/ecs/.
+    Ensure component types are correct, species data complete.
+  expected_output: "TypeScript files with zero errors, complete species taxonomy"
+
+context_recording:
+  description: |
+    OMEGA TASK: Record all work into ConPort after task completion.
+    Log decisions, update progress, record patterns.
+  expected_output: "Complete ConPort update with decisions and progress"
