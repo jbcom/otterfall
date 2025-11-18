@@ -19,7 +19,7 @@ export function Player({ mobileInput }: PlayerProps) {
   const { camera } = useThree();
   const playerRef = useRef<THREE.Mesh>(null);
   const velocityRef = useRef(new THREE.Vector3());
-  const { updatePlayerPosition, updatePlayerRotation, player, isPaused, restoreStamina, useStamina } = useRivermarsh();
+  const { updatePlayerPosition, updatePlayerRotation, player, isPaused, restoreStamina, useStamina, npcs, startDialogue, damageNPC } = useRivermarsh();
 
   const speed = 5;
   const sprintSpeed = 8;
@@ -28,6 +28,10 @@ export function Player({ mobileInput }: PlayerProps) {
   const groundY = 1;
 
   const rotationRef = useRef({ x: 0, y: 0 });
+  const interactCooldownRef = useRef(0);
+  const attackCooldownRef = useRef(0);
+  const prevInteractRef = useRef(false);
+  const prevAttackRef = useRef(false);
 
   useEffect(() => {
     rotationRef.current = { x: player.rotation[0], y: player.rotation[1] };
@@ -81,6 +85,52 @@ export function Player({ mobileInput }: PlayerProps) {
       useStamina(20);
       console.log("Jump!");
     }
+
+    interactCooldownRef.current = Math.max(0, interactCooldownRef.current - delta);
+    attackCooldownRef.current = Math.max(0, attackCooldownRef.current - delta);
+
+    if (mobileInput.interact && !prevInteractRef.current && interactCooldownRef.current === 0) {
+      const playerPos = new THREE.Vector3(...player.position);
+      const interactRange = 3;
+      
+      const nearbyNPC = npcs.find(npc => {
+        const npcPos = new THREE.Vector3(...npc.position);
+        const distance = playerPos.distanceTo(npcPos);
+        return distance < interactRange && (npc.type === "friendly" || npc.type === "quest_giver" || npc.type === "merchant");
+      });
+
+      if (nearbyNPC && nearbyNPC.dialogue) {
+        console.log(`Interacting with ${nearbyNPC.name}`);
+        startDialogue(nearbyNPC.id, nearbyNPC.name, nearbyNPC.dialogue);
+        interactCooldownRef.current = 0.5;
+      }
+    }
+    prevInteractRef.current = mobileInput.interact;
+
+    if (mobileInput.attack && !prevAttackRef.current && attackCooldownRef.current === 0 && player.stats.stamina > 15) {
+      const playerPos = new THREE.Vector3(...player.position);
+      const attackRange = 2.5;
+      
+      const targetNPC = npcs.find(npc => {
+        const npcPos = new THREE.Vector3(...npc.position);
+        const distance = playerPos.distanceTo(npcPos);
+        return distance < attackRange && npc.type === "hostile";
+      });
+
+      if (targetNPC) {
+        const baseDamage = 10;
+        const weaponBonus = player.equipment.weapon?.stats.attack || 0;
+        const totalDamage = baseDamage + weaponBonus;
+        
+        console.log(`Attacking ${targetNPC.name} for ${totalDamage} damage!`);
+        damageNPC(targetNPC.id, totalDamage);
+        useStamina(15);
+        attackCooldownRef.current = 0.6;
+      } else {
+        console.log("Attack missed - no enemy in range");
+      }
+    }
+    prevAttackRef.current = mobileInput.attack;
 
     velocityRef.current.y += gravity * delta;
 
