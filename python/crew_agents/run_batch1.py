@@ -53,10 +53,10 @@ def main():
         print(f"✓ Loaded {len(agents_config)} agents")
         print(f"✓ Loaded {len(tasks_config)} tasks\n")
         
-        # 2. Setup LLM
+        # 2. Setup LLM using OpenRouter via environment variables
         print("🤖 Setting up OpenRouter LLM...")
-        llm = create_openrouter_llm()
-        print("✓ LLM configured\n")
+        llm = create_openrouter_llm()  # Sets env vars, returns None for auto-detect
+        print("✓ OpenRouter configured\n")
         
         # 3. Create tools
         print("🔧 Creating MCP tools...")
