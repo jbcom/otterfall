@@ -2,6 +2,7 @@ import { Canvas } from "@react-three/fiber";
 import { KeyboardControls, Sky } from "@react-three/drei";
 import { Player } from "./Player";
 import { DioramaCamera } from "./DioramaCamera";
+import { GyroscopeCamera } from "./GyroscopeCamera";
 import { MarshlandTerrain } from "./MarshlandTerrain";
 import { NPCManager } from "./OtterNPC";
 import { VirtualJoysticks } from "./VirtualJoysticks";
@@ -77,7 +78,7 @@ export function RivermarshGame() {
           <fog attach="fog" args={["#7ab8d4", 30, 120]} />
 
           {!isMobile && <DesktopKeyboardInput />}
-          <DioramaCamera />
+          {isMobile ? <GyroscopeCamera /> : <DioramaCamera />}
           <Player />
           <MarshlandTerrain />
           <NPCManager />
