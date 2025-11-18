@@ -287,7 +287,10 @@ function DialogueBox() {
   const currentMessage = activeDialogue.messages[activeDialogue.currentIndex];
   const isLastMessage = activeDialogue.currentIndex === activeDialogue.messages.length - 1;
 
-  const handleClick = () => {
+  const handleClick = (e: any) => {
+    e.stopPropagation();
+    e.preventDefault();
+    console.log("Dialogue clicked, isLastMessage:", isLastMessage);
     if (isLastMessage) {
       endDialogue();
     } else {
@@ -298,6 +301,7 @@ function DialogueBox() {
   return (
     <div
       onClick={handleClick}
+      onTouchEnd={handleClick}
       style={{
         position: "absolute",
         bottom: "100px",
@@ -313,6 +317,8 @@ function DialogueBox() {
         border: "3px solid rgba(139, 105, 20, 0.9)",
         pointerEvents: "auto",
         cursor: "pointer",
+        zIndex: 1001,
+        touchAction: "auto",
       }}
     >
       <div style={{ fontWeight: "bold", color: "#DAA520", fontSize: "18px", marginBottom: "15px" }}>
