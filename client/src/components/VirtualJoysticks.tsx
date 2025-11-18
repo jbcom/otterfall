@@ -13,7 +13,7 @@ export function VirtualJoysticks() {
     const moveManager = nipplejs.create({
       zone: moveContainerRef.current,
       mode: "static",
-      position: { left: "15%", bottom: "15%" },
+      position: { right: "15%", bottom: "15%" },
       color: "rgba(100, 150, 200, 0.7)",
       size: 120,
       threshold: 0.1,
@@ -22,7 +22,7 @@ export function VirtualJoysticks() {
     const lookManager = nipplejs.create({
       zone: lookContainerRef.current,
       mode: "static",
-      position: { right: "15%", bottom: "15%" },
+      position: { left: "15%", bottom: "15%" },
       color: "rgba(200, 150, 100, 0.7)",
       size: 120,
       threshold: 0.1,
@@ -63,7 +63,7 @@ export function VirtualJoysticks() {
         style={{
           position: "fixed",
           bottom: 0,
-          left: 0,
+          right: 0,
           width: "50%",
           height: "40%",
           zIndex: 1000,
@@ -75,7 +75,7 @@ export function VirtualJoysticks() {
         style={{
           position: "fixed",
           bottom: 0,
-          right: 0,
+          left: 0,
           width: "50%",
           height: "40%",
           zIndex: 1000,
