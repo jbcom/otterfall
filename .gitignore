@@ -84,6 +84,9 @@ lerna-debug.log*
 .archived_docs/
 # END Ruler Generated Files
 
+# Local CrewAI clone for reference
+crewAI/
+
 # Ruler generated files (agent-specific outputs)
 CLAUDE.md
 .aider.conf.yml
