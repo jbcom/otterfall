@@ -78,6 +78,16 @@ def check_python_dependencies() -> List[Tuple[str, bool, str]]:
     return results
 
 
+def test_flow_instantiation() -> bool:
+    """Test if flows can actually be instantiated."""
+    try:
+        from crew_agents.flows.tdd_prototype_flow import TDDPrototypeFlow
+        flow = TDDPrototypeFlow()
+        return flow.name == "tdd_prototype_flow"
+    except Exception:
+        return False
+
+
 def main():
     """Run all health checks and report results."""
     print("=" * 60)
@@ -93,6 +103,14 @@ def main():
         print(f"  {status}: {name}")
         if not passed:
             all_passed = False
+    
+    # Check Flow Instantiation
+    print("\n🏗️  Flow Instantiation Check:")
+    can_instantiate = test_flow_instantiation()
+    status = "✓ Can instantiate flows" if can_instantiate else "✗ Cannot instantiate flows"
+    print(f"  {status}")
+    if not can_instantiate:
+        all_passed = False
     
     # Check Required Files
     print("\n📄 Configuration Files Check:")

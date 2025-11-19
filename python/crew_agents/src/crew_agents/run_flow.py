@@ -80,11 +80,22 @@ if __name__ == "__main__":
     
     flow_name = sys.argv[1]
     
-    if flow_name == "tdd_prototype":
-        requirements = {"feature": "biome_selector"}
-        run_tdd_prototype(requirements)
+    # Validate flow name
+    valid_flows = ["tdd_prototype", "meshy_asset", "prototype_assessment", 
+                   "asset_integration", "hitl_review", "batch_generation"]
+    if flow_name not in valid_flows:
+        print(f"❌ Unknown flow: {flow_name}")
+        print(f"Valid flows: {', '.join(valid_flows)}")
+        sys.exit(1)
     
-    elif flow_name == "meshy_asset":
+    try:
+        if flow_name == "tdd_prototype":
+            requirements = {"feature": "biome_selector"}
+            result = run_tdd_prototype(requirements)
+            print(f"\n✅ Flow completed successfully")
+            print(f"Result: {result}")
+        
+        elif flow_name == "meshy_asset":
         species = sys.argv[2] if len(sys.argv) > 2 else "otter"
         prompt = sys.argv[3] if len(sys.argv) > 3 else "A realistic otter"
         retexture = sys.argv[4] if len(sys.argv) > 4 else "grey fur variant"
@@ -111,6 +122,8 @@ if __name__ == "__main__":
         species_list = sys.argv[2:] if len(sys.argv) > 2 else ["otter", "beaver", "muskrat"]
         run_batch_generation(species_list)
     
-    else:
-        print(f"Unknown flow: {flow_name}")
+    except Exception as e:
+        print(f"\n❌ Flow execution failed: {str(e)}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)

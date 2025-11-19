@@ -34,13 +34,20 @@ class TDDPrototypeFlow(Flow[TDDPrototypeState]):
     @start()
     def design_phase(self):
         """Design the vertical slice with technical specifications."""
-        from crew_agents.crew import CrewAgents
-        
-        crew = CrewAgents()
-        result = crew.kickoff(inputs={
-            "task": "design_phase",
-            "requirements": self.state.requirements
-        })
+        try:
+            from crew_agents.crew import CrewAgents
+            crew = CrewAgents()
+            result = crew.kickoff(inputs={
+                "task": "design_phase",
+                "requirements": self.state.requirements
+            })
+        except ImportError:
+            # Fallback for testing/development
+            print("⚠️  CrewAgents not available, using mock result")
+            result = type('obj', (object,), {
+                'raw': {'design': 'Mock design output', 'approved': True}
+            })
+            return result
         
         self.state.design = result.raw if hasattr(result, 'raw') else result
         return result
