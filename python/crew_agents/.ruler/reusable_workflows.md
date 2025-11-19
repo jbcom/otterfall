@@ -4,9 +4,22 @@ This directory contains reusable workflow patterns that can be referenced across
 
 ## Workflow Files
 
+### Core Workflows
 - **tdd_prototype_workflow.yaml** - Standard 4-phase TDD pattern for any prototype
 - **meshy_asset_workflow.yaml** - Asset generation pipeline for species models
 - **prototype_to_production_workflow.yaml** - Assessment flow for production readiness
+
+### Asset Pipeline Workflows
+- **asset_integration_workflow.yaml** - Validation and integration of generated assets into ECS
+- **hitl_review_workflow.yaml** - Human-in-the-loop review with feedback iteration
+- **batch_generation_workflow.yaml** - Parallel multi-species generation for biomes
+
+### Data & Migration Workflows
+- **dfu_migration_workflow.yaml** - Extract, normalize, and enrich Daggerfall Unity data
+
+### Quality Assurance Workflows
+- **performance_optimization_workflow.yaml** - Profile, optimize, and validate 60fps target
+- **documentation_workflow.yaml** - Maintain ConPort and create integration guides
 
 These workflows define standardized sequences that ensure consistency across the development process.
 
