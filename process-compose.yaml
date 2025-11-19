@@ -30,6 +30,37 @@ processes:
     environment:
       - "PYTHONUNBUFFERED=1"
 
+  # Flow-based processes
+  tdd_prototype_flow:
+    command: "cd python/crew_agents && uv run python -m crew_agents.run_flow tdd_prototype"
+    working_dir: "."
+    availability:
+      restart: "on_failure"
+      max_restarts: 2
+    environment:
+      - "PYTHONUNBUFFERED=1"
+
+  meshy_asset_flow:
+    command: "cd python/crew_agents && uv run python -m crew_agents.run_flow meshy_asset otter 'realistic river otter' 'grey fur variant'"
+    working_dir: "."
+    availability:
+      restart: "on_failure"
+      max_restarts: 2
+    environment:
+      - "PYTHONUNBUFFERED=1"
+
+  prototype_assessment_flow:
+    command: "cd python/crew_agents && uv run python -m crew_agents.run_flow prototype_assessment biome_selector_diorama"
+    working_dir: "."
+    depends_on:
+      tdd_prototype_flow:
+        condition: process_completed_successfully
+    availability:
+      restart: "on_failure"
+      max_restarts: 2
+    environment:
+      - "PYTHONUNBUFFERED=1"
+
   terrain_water_rendering:
     command: "cd python/crew_agents && uv run crewai run --task terrain_water_rendering"
     working_dir: "."
