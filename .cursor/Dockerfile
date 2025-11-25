@@ -1,125 +1,105 @@
 FROM node:24-bookworm-slim
 
-# Display for GUI-based tests
-ENV DISPLAY=:99
-
-# Install system dependencies for browsers, builds, Electron, and Android tooling
+# =============================================================================
+# SYSTEM DEPENDENCIES
+# =============================================================================
+# Single consolidated layer for all apt packages to minimize image size
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Build essentials (native Node modules like better-sqlite3)
-    git \
-    git-lfs \
-    curl \
-    wget \
+    # Build essentials (required for native Node modules: better-sqlite3, etc.)
     build-essential \
     pkg-config \
+    # Version control
+    git \
+    git-lfs \
+    # Download utilities
+    curl \
+    wget \
+    ca-certificates \
+    # Python runtime (required for uv and CrewAI agents)
     python3 \
     python3-pip \
-    # X11 libraries for GUI testing
-    xvfb \
-    x11-utils \
-    libx11-dev \
-    libxext-dev \
-    libxrender-dev \
-    libxinerama-dev \
-    # Browser testing dependencies (Chromium + ChromeDriver)
+    # Playwright/Chromium dependencies (headless browser testing)
     chromium \
     chromium-driver \
-    # Headless browser support libraries (Playwright/Chromium)
     libgbm1 \
-    libgbm-dev \
-    libdrm2 \
     libasound2 \
     libatk1.0-0 \
     libatk-bridge2.0-0 \
-    libgtk-3-0 \
-    libgtk-3-dev \
-    libnotify-dev \
-    libnss3 \
-    libnss3-dev \
-    libxss1 \
-    libxtst6 \
-    xdg-utils \
-    libatspi2.0-0 \
-    libsecret-1-0 \
     libcups2 \
-    libnspr4 \
-    fonts-liberation \
-    # Additional common browser deps
+    libdrm2 \
     libglib2.0-0 \
-    libgdk-pixbuf2.0-0 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
     libxcomposite1 \
     libxdamage1 \
     libxfixes3 \
-    libxrandr2 \
     libxkbcommon0 \
-    libxshmfence1 \
-    libpango-1.0-0 \
-    ffmpeg \
-    # SDL2 for game testing
-    libsdl2-dev \
-    libsdl2-image-dev \
-    libsdl2-mixer-dev \
-    libsdl2-ttf-dev \
-    # OpenGL/WebGL testing
-    libgl1-mesa-dev \
-    libglu1-mesa-dev \
-    mesa-utils \
-    # Android/Capacitor build prerequisites
-    openjdk-17-jdk \
-    unzip \
-    gradle \
-    ca-certificates \
+    libxrandr2 \
+    fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
-# Initialize git-lfs in the image environment with SMUDGE FILTER DISABLED
-# This prevents crashes when loading repos with 600+ LFS objects
-# LFS files will appear as pointers, which is fine for Cursor/AI analysis
-# Actual LFS operations (checkout, pull) happen in GitHub Actions
+# =============================================================================
+# GIT LFS CONFIGURATION
+# =============================================================================
+# CRITICAL: --skip-smudge prevents workspace crashes with large LFS repos
+# LFS files appear as pointers (fine for Cursor/AI analysis)
+# Actual LFS operations (checkout, pull) handled by GitHub Actions
 RUN git lfs install --system --skip-smudge
 
-# Note: git-lfs package is installed above in the system dependencies section
-# CRITICAL: --skip-smudge prevents workspace crashes with large LFS repos
-# All .glb files (3D models) are tracked via LFS (configured in .gitattributes)
-# GitHub Actions workflows handle actual LFS file operations
+# =============================================================================
+# DEVELOPER TOOLS
+# =============================================================================
+# Install tools in a single layer to reduce image size
 
-# Install just command runner
-RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+# Python package manager (uv) - Required for process-compose.yaml workflows
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    mv /root/.local/bin/uv /usr/local/bin/ && \
+    uv --version
 
-# Install GitHub CLI
-RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-    && apt-get update \
-    && apt-get install -y gh \
-    && rm -rf /var/lib/apt/lists/*
+# Just command runner - Task automation
+RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | \
+    bash -s -- --to /usr/local/bin
 
-# Install Redis for agent fleet task queue
-RUN apt-get update && apt-get install -y redis-server supervisor && rm -rf /var/lib/apt/lists/*
+# Process-compose - Multi-process orchestration (required for CrewAI workflows)
+RUN curl -L https://github.com/F1bonacc1/process-compose/releases/download/v1.51.1/process-compose_linux_amd64.tar.gz | \
+    tar xz -C /usr/local/bin process-compose && \
+    chmod +x /usr/local/bin/process-compose && \
+    process-compose --version
 
-# pnpm via Corepack (MANDATORY package manager)
+# GitHub CLI - CI/CD integration
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
+    dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg && \
+    chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | \
+    tee /etc/apt/sources.list.d/github-cli.list > /dev/null && \
+    apt-get update && \
+    apt-get install -y gh && \
+    rm -rf /var/lib/apt/lists/*
+
+# =============================================================================
+# NODE.JS PACKAGE MANAGER (pnpm)
+# =============================================================================
+# MUST match package.json "packageManager" field exactly
 ENV PNPM_HOME=/root/.local/share/pnpm
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@9.12.3 --activate && pnpm --version
+RUN corepack enable && \
+    corepack prepare pnpm@9.15.0 --activate && \
+    pnpm --version
 
-# Playwright: install required OS deps and cache Chromium browser
-RUN pnpm dlx playwright install-deps
-RUN pnpm dlx playwright install chromium
+# =============================================================================
+# PLAYWRIGHT BROWSER CACHE
+# =============================================================================
+# Pre-install Playwright dependencies and Chromium browser
+# This reduces startup time for tests and matches CI workflow
+RUN pnpm dlx playwright install-deps chromium && \
+    pnpm dlx playwright install chromium
 
-# Android SDK (for Capacitor Android tasks)
-# Use a variable for the command line tools version for easier updates.
-# Last tested/compatible version as of 2024-06. Update as needed.
-ENV ANDROID_CMDLINE_TOOLS_VERSION=11076708
-ENV ANDROID_SDK_ROOT=/opt/android-sdk ANDROID_HOME=/opt/android-sdk
-ENV PATH="$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools"
-RUN mkdir -p /opt/android-sdk/cmdline-tools \
-    && curl -sSL -o /tmp/cmdtools.zip "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS_VERSION}_latest.zip" \
-    && unzip -q /tmp/cmdtools.zip -d /opt/android-sdk/cmdline-tools \
-    && mv /opt/android-sdk/cmdline-tools/cmdline-tools /opt/android-sdk/cmdline-tools/latest \
-    && rm -f /tmp/cmdtools.zip
-
-RUN yes | sdkmanager --licenses && sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-
-# Useful envs for Selenium
-ENV CHROME_BIN=/usr/bin/chromium CHROMEDRIVER_PATH=/usr/bin/chromedriver
+# =============================================================================
+# ENVIRONMENT VARIABLES
+# =============================================================================
+# Selenium/WebDriver paths (for integration tests)
+ENV CHROME_BIN=/usr/bin/chromium
+ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
 
 WORKDIR /workspace
