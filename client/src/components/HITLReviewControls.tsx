@@ -1,5 +1,3 @@
-
-```typescript
 import { useState } from 'react';
 import {
   Box,
@@ -112,4 +110,5 @@ export function HITLReviewControls({
     </Paper>
   );
 }
-```
+
+export default HITLReviewControls;

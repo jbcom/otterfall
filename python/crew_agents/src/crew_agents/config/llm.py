@@ -8,17 +8,19 @@ See: https://docs.crewai.com/en/concepts/llms#open-router
 import os
 from typing import Any, Optional
 
-# Default model - openrouter/auto automatically selects best model
-DEFAULT_MODEL = "openrouter/auto"
+# Default model - use a reliable model via OpenRouter
+# Note: "openrouter/auto" is not valid - must use specific provider/model format
+DEFAULT_MODEL = "openrouter/google/gemini-2.0-flash-001"
 
 # Alternative models available via OpenRouter
 MODELS = {
-    "auto": "openrouter/auto",
-    "deepseek-r1": "openrouter/deepseek/deepseek-r1",
+    "gemini-flash": "openrouter/google/gemini-2.0-flash-001",
     "deepseek-chat": "openrouter/deepseek/deepseek-chat",
     "claude-sonnet": "openrouter/anthropic/claude-3.5-sonnet",
+    "claude-haiku": "openrouter/anthropic/claude-3-5-haiku",
+    "gpt-4o-mini": "openrouter/openai/gpt-4o-mini",
     "gpt-4o": "openrouter/openai/gpt-4o",
-    "gemini-flash": "openrouter/google/gemini-2.0-flash",
+    "deepseek-r1": "openrouter/deepseek/deepseek-r1",
 }
 
 
@@ -100,9 +102,9 @@ def get_reasoning_llm() -> Optional[Any]:
 
 def get_creative_llm() -> Optional[Any]:
     """Get LLM optimized for creative tasks."""
-    return get_llm(MODELS["auto"], temperature=0.8)
+    return get_llm(MODELS["gemini-flash"], temperature=0.8)
 
 
 def get_code_llm() -> Optional[Any]:
     """Get LLM optimized for code generation."""
-    return get_llm(MODELS["auto"], temperature=0.2)
+    return get_llm(MODELS["gemini-flash"], temperature=0.2)

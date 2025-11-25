@@ -145,35 +145,43 @@ const LOCATIONS = ["the flooded caverns", "the ancient ruins", "the deep marshes
 const NPCS = ["Elder Ripple", "Swift Paws", "Whisker Sage", "Marsh Guide"];
 
 function generateRandomObjective(seed: number): string {
-  const template = PROCEDURAL_OBJECTIVES[seed % PROCEDURAL_OBJECTIVES.length];
+  const templateIndex = seed % PROCEDURAL_OBJECTIVES.length;
+  const template = PROCEDURAL_OBJECTIVES[templateIndex] ?? "Collect {count} {item}";
+  
+  const item = ITEMS[seed % ITEMS.length] ?? "fish";
+  const enemy = ENEMIES[seed % ENEMIES.length] ?? "hostile otters";
+  const location = LOCATIONS[seed % LOCATIONS.length] ?? "the marshes";
+  const npc = NPCS[seed % NPCS.length] ?? "Elder Ripple";
   
   return template
     .replace("{count}", String(Math.floor((seed % 10) + 3)))
-    .replace("{item}", ITEMS[seed % ITEMS.length])
-    .replace("{enemy}", ENEMIES[seed % ENEMIES.length])
-    .replace("{location}", LOCATIONS[seed % LOCATIONS.length])
-    .replace("{npc}", NPCS[seed % NPCS.length]);
+    .replace("{item}", item)
+    .replace("{enemy}", enemy)
+    .replace("{location}", location)
+    .replace("{npc}", npc);
 }
 
 export function generateQuest(faction: OtterFaction, playerLevel: number, seed: number): Quest {
-  const templates = QUEST_TEMPLATES[faction] || [];
+  const templates = QUEST_TEMPLATES[faction] ?? [];
+  const giver = NPCS[seed % NPCS.length] ?? "Elder Ripple";
   
   if (templates.length > 0 && seed < templates.length) {
     const template = templates[seed];
-    
-    return {
-      id: `quest_${faction}_${seed}`,
-      title: template.title,
-      description: template.description,
-      giver: NPCS[seed % NPCS.length],
-      status: "available",
-      objectives: template.objectives,
-      completedObjectives: [],
-      rewards: {
-        ...template.rewards,
-        experience: template.rewards.experience + playerLevel * 10,
-      },
-    };
+    if (template) {
+      return {
+        id: `quest_${faction}_${seed}`,
+        title: template.title,
+        description: template.description,
+        giver,
+        status: "available",
+        objectives: template.objectives,
+        completedObjectives: [],
+        rewards: {
+          ...template.rewards,
+          experience: template.rewards.experience + playerLevel * 10,
+        },
+      };
+    }
   }
   
   const numObjectives = Math.floor((seed % 3) + 2);
@@ -186,7 +194,7 @@ export function generateQuest(faction: OtterFaction, playerLevel: number, seed: 
     id: `quest_procedural_${faction}_${seed}`,
     title: `${faction.replace("_", " ").toUpperCase()} Mission #${seed}`,
     description: `A procedurally generated quest for the ${faction} faction.`,
-    giver: NPCS[seed % NPCS.length],
+    giver,
     status: "available",
     objectives,
     completedObjectives: [],
