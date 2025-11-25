@@ -1,10 +1,10 @@
-# Continuous Integration - Runs on all PRs and pushes
+# Continuous Integration
 #
-# This workflow ensures code quality through:
-# - TypeScript type checking
-# - ESLint and Prettier
-# - Python unit tests
-# - Python integration tests (optional, requires API keys)
+# Follows vendor best practices:
+# - pnpm: https://pnpm.io/continuous-integration#github-actions
+# - uv: https://docs.astral.sh/uv/guides/integration/github/
+# - Playwright: https://playwright.dev/docs/ci-intro#setting-up-github-actions
+# - Node.js: https://github.com/actions/setup-node
 
 name: CI
 
@@ -15,68 +15,67 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   PYTHON_VERSION: '3.11'
   NODE_VERSION: '20'
 
 jobs:
-  # TypeScript and Frontend checks
+  # =============================================================================
+  # Frontend Checks (Node.js/TypeScript/React)
+  # =============================================================================
   frontend:
-    name: Frontend Checks
+    name: Frontend
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
+      # pnpm best practice: setup pnpm before node for caching
+      - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
+      # Node.js with built-in pnpm cache support
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install
 
       - name: TypeScript type check
         run: pnpm run check
-        continue-on-error: true  # TODO: Fix existing TS errors then remove this
+        continue-on-error: true  # TODO: Fix existing errors
 
-      - name: ESLint
+      - name: Lint
         run: pnpm run lint
-        continue-on-error: true  # TODO: Fix existing lint errors then remove this
+        continue-on-error: true  # TODO: Fix existing errors
 
-      - name: Prettier check
+      - name: Format check
         run: pnpm run format:check
-        continue-on-error: true  # TODO: Fix existing format errors then remove this
+        continue-on-error: true  # TODO: Fix existing errors
 
-      - name: Run Vitest tests
+      - name: Unit tests
         run: pnpm run test:run
 
-  # Python unit tests (no external dependencies)
-  python-unit:
-    name: Python Unit Tests
+  # =============================================================================
+  # Python Unit Tests
+  # =============================================================================
+  python-test:
+    name: Python Tests
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
+      # uv best practice: use setup-uv with caching
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
@@ -86,26 +85,30 @@ jobs:
       - name: Set up Python
         run: uv python install ${{ env.PYTHON_VERSION }}
 
-      - name: Install mesh_toolkit and run tests
+      # Install and test mesh_toolkit
+      - name: Test mesh_toolkit
         working-directory: python/mesh_toolkit
         run: |
-          uv sync
+          uv sync --group test
           uv run pytest ../tests/unit -v --tb=short --ignore=../tests/unit/crew_agents
 
-      - name: Install crew_agents and run tests
+      # Install and test crew_agents (may have complex deps)
+      - name: Test crew_agents
         working-directory: python/crew_agents
         run: |
           uv sync
           uv run pytest ../tests/unit/crew_agents -v --tb=short
-        continue-on-error: true  # CrewAI has complex deps
+        continue-on-error: true
 
-  # Python integration tests (requires API keys)
+  # =============================================================================
+  # Python Integration Tests (with Playwright)
+  # =============================================================================
   python-integration:
-    name: Python Integration Tests
+    name: Python Integration
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'run-integration')
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install uv
@@ -121,66 +124,101 @@ jobs:
         working-directory: python/mesh_toolkit
         run: uv sync --all-extras
 
+      # Playwright best practice: cache browser binaries
+      - name: Get Playwright version
+        id: playwright-version
+        working-directory: python/mesh_toolkit
+        run: |
+          PLAYWRIGHT_VERSION=$(uv run python -c "import playwright; print(playwright.__version__)")
+          echo "version=$PLAYWRIGHT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+
+      # Playwright best practice: install with system deps
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        working-directory: python/mesh_toolkit
+        run: uv run playwright install --with-deps
+
+      - name: Install Playwright system deps only
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        working-directory: python/mesh_toolkit
+        run: uv run playwright install-deps
+
       - name: Run integration tests
         working-directory: python/mesh_toolkit
         env:
           MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
-        run: |
-          uv run pytest ../tests/integration -v --tb=short || echo "Integration tests skipped or failed"
+        run: uv run pytest ../tests/integration -v --tb=short
 
-  # Python code quality
+  # =============================================================================
+  # Python Lint
+  # =============================================================================
   python-lint:
     name: Python Lint
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Run ruff check
+      - name: Ruff check
         working-directory: python
         run: uvx ruff check . --output-format=github
-        continue-on-error: true  # TODO: Fix existing lint errors then remove this
+        continue-on-error: true  # TODO: Fix existing errors
 
-      - name: Run ruff format check
+      - name: Ruff format
         working-directory: python
         run: uvx ruff format --check .
-        continue-on-error: true  # TODO: Fix existing format errors then remove this
+        continue-on-error: true  # TODO: Fix existing errors
 
-  # Workflow validation
+  # =============================================================================
+  # Workflow Validation
+  # =============================================================================
   workflow-lint:
     name: Workflow Lint
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate workflow files
+      - name: Validate workflows
         uses: docker://rhysd/actionlint:latest
         with:
           args: -color
-        continue-on-error: true  # Informational only
 
-  # Summary job
-  ci-complete:
-    name: CI Complete
-    needs: [frontend, python-unit, python-lint, workflow-lint]
+  # =============================================================================
+  # CI Status
+  # =============================================================================
+  ci-status:
+    name: CI Status
+    needs: [frontend, python-test, python-lint, workflow-lint]
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Check results
+      - name: Check status
         run: |
-          echo "Frontend: ${{ needs.frontend.result }}"
-          echo "Python Unit: ${{ needs.python-unit.result }}"
-          echo "Python Lint: ${{ needs.python-lint.result }}"
-          echo "Workflow Lint: ${{ needs.workflow-lint.result }}"
+          echo "## CI Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | ${{ needs.frontend.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Python Tests | ${{ needs.python-test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Python Lint | ${{ needs.python-lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Workflow Lint | ${{ needs.workflow-lint.result }} |" >> $GITHUB_STEP_SUMMARY
 
-          # Fail if any required job failed
-          if [[ "${{ needs.frontend.result }}" == "failure" ]]; then
-            echo "::error::Frontend checks failed"
+          if [[ "${{ needs.frontend.result }}" == "failure" ]] || \
+             [[ "${{ needs.python-test.result }}" == "failure" ]]; then
+            echo ""
+            echo "::error::Required checks failed"
             exit 1
           fi
 
-          echo "✅ CI checks completed"
+          echo ""
+          echo "✅ All required checks passed"
