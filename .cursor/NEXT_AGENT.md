@@ -1,125 +1,203 @@
-# NEXT AGENT — CREWAI ARCHITECTURE COMPLETE
+# NEXT AGENT — CONPORT MEMORY SYSTEM ACTIVE
 
-Status: ✅ CREWS AND FLOWS IMPLEMENTED  
-Mode: Ready for Testing
+Status: ✅ CONPORT INTEGRATION COMPLETE  
+Mode: Ready for AI-Assisted Development
 
 ---
 
-## What Was Done
+## Session Summary (2025-11-25)
 
-### 1. CrewAI Architecture (v2.0)
+### What Was Done
 
-Implemented 7 specialized crews with proper `@CrewBase` pattern:
+#### 1. Context Portal (ConPort) Integration
+- Cloned and analyzed context-portal repository
+- Created comprehensive `projectBrief.md` for ConPort initialization
+- Configured ConPort as MCP server in `.ruler/ruler.toml`
+- Added ConPort to `process-compose.yaml` as background service
 
-**Design Crews:**
-- `WorldDesignCrew` - World structure, biomes, ecosystems
-- `CreatureDesignCrew` - Species, behaviors, stats balance
-- `GameplayDesignCrew` - Core loops, combat, progression
+#### 2. Cursor Background Agent Rules
+- Created `.cursor/rules/10-background-agent-conport.mdc`
+- Defines initialization sequence for loading ConPort context
+- Includes tool reference for all ConPort operations
+- Establishes sync protocol for conversation → database
 
-**Implementation Crews:**
-- `ECSImplementationCrew` - Miniplex components and systems
-- `RenderingCrew` - Shaders, R3F scenes, optimization
+#### 3. Infrastructure Updates
+- Added process-compose v1.51.1 to `.cursor/Dockerfile`
+- Created `/workspace/logs/` and `/workspace/context_portal/` directories
+- Created `.ruler/conport_usage.md` documentation
 
-**Operations Crews:**
-- `AssetPipelineCrew` - Meshy prompts and asset specs
-- `QAValidationCrew` - Quality gates between phases
+#### 4. Session Documentation
+- Exported session work to `conport_export/session-2025-11-25/`
+- Includes: decisions, progress, system patterns, custom data
 
-### 2. Flow Orchestration
+---
 
-Three main flows with evaluation loops:
+## ConPort Quick Start
 
-- `GameDesignFlow` - Design phase with QA gates
-- `ImplementationFlow` - Code generation with review
-- `AssetGenerationFlow` - Asset creation with HITL approval
+### 1. Initialize ConPort
 
-### 3. OpenRouter Integration
+```bash
+# Start all background services (including ConPort)
+process-compose up -d
 
-All agents use `openrouter/auto` for automatic model selection:
-
-```python
-from crew_agents.config.llm import get_llm
-llm = get_llm()  # Uses openrouter/auto
+# Or run ConPort standalone
+uvx --from context-portal-mcp conport-mcp \
+  --mode stdio \
+  --workspace_id "$(pwd)" \
+  --log-file ./logs/conport.log
 ```
 
-### 4. Docker Environment
+### 2. Agent Initialization Protocol
 
-Created `.cursor/` directory with:
-- `Dockerfile` - Node 24 + Python 3.12 + Android SDK
-- `docker-compose.yml` - Service orchestration
-- `environment.json` - Cursor config
-- `rules/00-loader.mdc` - Agent rules
+At the start of EVERY session, execute:
+
+```
+[CONPORT_ACTIVE] or [CONPORT_INACTIVE]
+```
+
+Then load context:
+```yaml
+1. get_product_context      # Project goals from projectBrief.md
+2. get_active_context       # Current sprint focus
+3. get_decisions(limit: 5)  # Recent architectural decisions
+4. get_progress(limit: 5)   # Recent task progress
+5. get_system_patterns      # Coding patterns
+```
+
+### 3. Sync Protocol
+
+Tell any AI agent:
+```
+Sync ConPort
+```
+
+This triggers full conversation → database synchronization.
+
+---
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     AI AGENTS (Consumers)                       │
+│  Cursor │ Claude │ Copilot │ CrewAI │ Cline │ Windsurf         │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ MCP Protocol
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    ConPort MCP Server                           │
+│  uvx --from context-portal-mcp conport-mcp                      │
+│  Database: ./context_portal/context.db                          │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    CREWAI GAME BUILDER                          │
+│  python/crew_agents/                                            │
+│  - GameBuilderCrew (code generation)                            │
+│  - Knowledge Base (working code patterns)                       │
+│  - Custom File Tools (safe read/write)                          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `projectBrief.md` | ConPort initialization source |
+| `.ruler/ruler.toml` | MCP server configuration |
+| `.ruler/conport_usage.md` | ConPort tool reference |
+| `.cursor/rules/10-background-agent-conport.mdc` | Agent rules |
+| `process-compose.yaml` | Background service definitions |
+| `conport_export/session-2025-11-25/` | Today's session export |
 
 ---
 
 ## Next Steps
 
-### 1. Test the Crews (Requires OPENROUTER_API_KEY)
+### 1. Import Session Data to ConPort
+
+Once ConPort is running, import today's session:
+```bash
+# Using ConPort MCP tool
+import_markdown_to_conport:
+  workspace_id: "/workspace"
+  input_path: "./conport_export/session-2025-11-25/"
+```
+
+### 2. Apply Ruler Configuration
+
+```bash
+ruler apply --nested
+```
+
+### 3. Test GameBuilderCrew
 
 ```bash
 cd python/crew_agents
 export OPENROUTER_API_KEY=your-key
-uv run crew_agents design
+uv run crew_agents build "SwimmingComponent with velocity, stamina, dive_depth"
 ```
 
-### 2. Verify Imports
+### 4. Verify ConPort Connection
 
 ```bash
-cd python/crew_agents
-uv run python -c "from crew_agents import GameDesignFlow; print('OK')"
+# Check process-compose status
+process-compose ps
+
+# View ConPort logs
+process-compose logs conport
 ```
 
-### 3. Run Full Pipeline
+---
+
+## Environment Requirements
 
 ```bash
-uv run crew_agents full
+# Required environment variables
+export OPENROUTER_API_KEY="your-openrouter-key"
+export MESHY_API_KEY="your-meshy-key"         # For asset generation
+export GITHUB_PERSONAL_ACCESS_TOKEN="your-gh-token"  # Optional
+
+# Python 3.13 (project standard)
+python --version  # Should be 3.13+
 ```
 
 ---
 
-## Architecture Summary
+## Troubleshooting
 
+### ConPort Not Responding
+```bash
+# Check if uvx can run ConPort
+uvx --from context-portal-mcp conport-mcp --help
+
+# Restart via process-compose
+process-compose restart conport
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     GAME DESIGN FLOW                            │
-│  World Design → QA → Creature Design → QA → Gameplay Design → QA│
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   IMPLEMENTATION FLOW                           │
-│  ECS Components → QA → ECS Systems → QA → Rendering → QA       │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   ASSET GENERATION FLOW                         │
-│  Asset Specs → Meshy Prompts → Generate → QA → HITL → Integrate│
-└─────────────────────────────────────────────────────────────────┘
+
+### Database Not Found
+Database auto-creates on first tool call. If missing:
+```bash
+# Trigger creation with any ConPort call
+# Or manually create directory
+mkdir -p ./context_portal
+```
+
+### MCP Server Not Configured
+```bash
+# Regenerate MCP configuration
+ruler apply --nested --agents cursor
 ```
 
 ---
 
-## Files Created/Modified
+## Documentation References
 
-### New Files
-- `python/crew_agents/src/crew_agents/config/llm.py`
-- `python/crew_agents/src/crew_agents/crews/*/` (7 crews)
-- `python/crew_agents/src/crew_agents/flows/*.py` (3 flows)
-- `.cursor/Dockerfile`
-- `.cursor/docker-compose.yml`
-- `.cursor/environment.json`
-- `.cursor/rules/00-loader.mdc`
-
-### Modified Files
-- `python/crew_agents/pyproject.toml` - Updated entry points
-- `python/crew_agents/README.md` - New documentation
-- `python/crew_agents/AGENTS.md` - Updated architecture
-
----
-
-## Constraints
-
-- All crews use `openrouter/auto` via `get_llm()`
-- YAML configs in each crew's `config/` directory
-- Flows use Pydantic BaseModel for state
-- QA crew provides gates between all phases
+- **ConPort Docs**: https://github.com/GreatScottyMac/context-portal
+- **Ruler Docs**: https://github.com/ruler-ai/ruler
+- **CrewAI Docs**: https://docs.crewai.com
+- **Project Brief**: `/workspace/projectBrief.md`
+- **ConPort Usage**: `/workspace/.ruler/conport_usage.md`

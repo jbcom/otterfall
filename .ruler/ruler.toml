@@ -50,10 +50,17 @@ args = ["-y", "vite-react-mcp-server"]
 
 [mcp_servers.conport]
 command = "uvx"
-args = ["--from", "context-portal-mcp", "conport-mcp"]
+args = [
+  "--from", "context-portal-mcp", 
+  "conport-mcp", 
+  "--mode", "stdio",
+  "--log-level", "INFO"
+]
+# Note: workspace_id is auto-detected or provided per-call
+# ConPort will read projectBrief.md on initialization
 
 [mcp_servers.conport.env]
-CONPORT_FILES = "projectbrief.md"
+CONPORT_FILES = "projectBrief.md"
 
 [mcp_servers.git]
 command = "uvx"
