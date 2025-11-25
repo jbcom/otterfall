@@ -48,6 +48,38 @@ class CrewAgents:
             self._crew = Crew.from_yaml(str(self.config_path))
         return self._crew
 
+    def _get_crew_for_task(self, task_name: Optional[str] = None) -> Crew:
+        """
+        Get a crew instance, optionally filtered to a specific task.
+        
+        When task filtering is needed, creates a fresh crew instance to avoid
+        mutating the cached crew's task list.
+        
+        Args:
+            task_name: Optional task name to filter to
+            
+        Returns:
+            Crew instance (cached if no filtering, fresh if filtering)
+            
+        Raises:
+            ValueError: If task_name is provided but not found
+        """
+        if task_name is None:
+            return self.crew
+        
+        # Create fresh crew for task filtering to avoid mutating cached instance
+        crew = Crew.from_yaml(str(self.config_path))
+        matching_tasks = [t for t in crew.tasks if t.name == task_name]
+        
+        if not matching_tasks:
+            available = [t.name for t in crew.tasks]
+            raise ValueError(
+                f"Task '{task_name}' not found. Available: {available}"
+            )
+        
+        crew.tasks = matching_tasks
+        return crew
+
     def kickoff(self, inputs: Optional[Dict[str, Any]] = None) -> Any:
         """
         Execute the crew with given inputs.
@@ -60,31 +92,14 @@ class CrewAgents:
         Returns:
             CrewOutput from crew execution
         """
-        crew = self.crew
-
-        # If specific task requested, filter to that task
-        if inputs and "task" in inputs:
-            task_name = inputs.pop("task")
-            matching_tasks = [t for t in crew.tasks if t.name == task_name]
-            if not matching_tasks:
-                available = [t.name for t in crew.tasks]
-                raise ValueError(
-                    f"Task '{task_name}' not found. Available: {available}"
-                )
-            crew.tasks = matching_tasks
-
+        task_name = inputs.pop("task", None) if inputs else None
+        crew = self._get_crew_for_task(task_name)
         return crew.kickoff(inputs=inputs)
 
     def kickoff_async(self, inputs: Optional[Dict[str, Any]] = None) -> Any:
         """Async version of kickoff for parallel execution."""
-        crew = self.crew
-
-        if inputs and "task" in inputs:
-            task_name = inputs.pop("task")
-            matching_tasks = [t for t in crew.tasks if t.name == task_name]
-            if matching_tasks:
-                crew.tasks = matching_tasks
-
+        task_name = inputs.pop("task", None) if inputs else None
+        crew = self._get_crew_for_task(task_name)
         return crew.kickoff_async(inputs=inputs)
 
 

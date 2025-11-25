@@ -268,7 +268,20 @@ jobs:
           script: |
             const action = '${{ needs.route.outputs.action }}';
             const flow = '${{ needs.route.outputs.flow }}';
-            const issueNumber = context.issue?.number || JSON.parse('${{ needs.route.outputs.flow_args }}').issue_number;
+            
+            // Safely parse issue number with fallback
+            let issueNumber = context.issue?.number;
+            if (!issueNumber) {
+              const flowArgsStr = '${{ needs.route.outputs.flow_args }}';
+              if (flowArgsStr && flowArgsStr.trim() !== '' && flowArgsStr !== '{}') {
+                try {
+                  const parsedArgs = JSON.parse(flowArgsStr);
+                  issueNumber = parsedArgs.issue_number;
+                } catch (e) {
+                  console.log('Could not parse flow_args:', e.message);
+                }
+              }
+            }
 
             if (!issueNumber) return;
 

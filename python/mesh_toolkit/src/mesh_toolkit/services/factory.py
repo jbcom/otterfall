@@ -1,5 +1,6 @@
 """Service factory for mesh_toolkit services with proper dependency injection."""
 import os
+import threading
 from typing import Optional
 from ..api.base_client import BaseHttpClient
 from ..persistence.repository import TaskRepository
@@ -26,7 +27,8 @@ class ServiceFactory:
         )
     """
 
-    DEFAULT_WEBHOOK_BASE = "http://0.0.0.0:8000/webhooks/meshy"
+    # Use localhost for local development (0.0.0.0 is non-routable for callbacks)
+    DEFAULT_WEBHOOK_BASE = "http://localhost:8000/webhooks/meshy"
 
     def __init__(
         self,
@@ -99,21 +101,26 @@ class ServiceFactory:
         self.close()
 
 
-# Module-level singleton for convenience
+# Module-level singleton for convenience (thread-safe)
 _default_factory: Optional[ServiceFactory] = None
+_factory_lock = threading.Lock()
 
 
 def get_factory() -> ServiceFactory:
-    """Get or create default service factory singleton."""
+    """Get or create default service factory singleton (thread-safe)."""
     global _default_factory
     if _default_factory is None:
-        _default_factory = ServiceFactory()
+        with _factory_lock:
+            # Double-checked locking pattern
+            if _default_factory is None:
+                _default_factory = ServiceFactory()
     return _default_factory
 
 
 def reset_factory():
     """Reset the default factory (useful for testing)."""
     global _default_factory
-    if _default_factory:
-        _default_factory.close()
-    _default_factory = None
+    with _factory_lock:
+        if _default_factory:
+            _default_factory.close()
+        _default_factory = None

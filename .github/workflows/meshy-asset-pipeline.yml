@@ -143,8 +143,6 @@ jobs:
         env:
           MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
         run: |
-          cd python/mesh_toolkit
-
           # Extract data from webhook payload
           TASK_ID='${{ github.event.client_payload.task_id }}'
           STATUS='${{ github.event.client_payload.status }}'
@@ -155,20 +153,28 @@ jobs:
             exit 1
           fi
 
-          # Download GLB and update manifest
+          # Download GLB and update manifest (use absolute paths from repo root)
+          cd python/mesh_toolkit
           uv run python -c "
+          import os
+          from pathlib import Path
           from mesh_toolkit.client import MeshyClient
           from mesh_toolkit.persistence.repository import TaskRepository
 
+          # Get repo root (two levels up from python/mesh_toolkit)
+          repo_root = Path(os.environ.get('GITHUB_WORKSPACE', '../..'))
+          models_base = repo_root / 'client/public/models'
+
           client = MeshyClient()
-          repo = TaskRepository()
+          repo = TaskRepository(base_path=str(models_base))
 
           # Get task result
           result = client.get_text_to_3d('$TASK_ID')
 
-          # Download GLB
-          output_path = 'client/public/models/${SPECIES}/static.glb'
-          client.download_file(result.model_urls.glb, output_path)
+          # Download GLB to repo root path
+          output_path = models_base / '$SPECIES' / 'static.glb'
+          output_path.parent.mkdir(parents=True, exist_ok=True)
+          client.download_file(result.model_urls.glb, str(output_path))
           print(f'Downloaded: {output_path}')
 
           # Update manifest
@@ -177,7 +183,7 @@ jobs:
               spec_hash='${{ github.event.client_payload.spec_hash }}',
               task_id='$TASK_ID',
               status='SUCCEEDED',
-              result_paths={'glb': output_path}
+              result_paths={'glb': str(output_path.relative_to(repo_root))}
           )
           "
 
@@ -313,23 +319,29 @@ jobs:
         env:
           MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
         run: |
-          cd python/mesh_toolkit
-
           TASK_ID='${{ github.event.client_payload.task_id }}'
           SPECIES='${{ github.event.client_payload.species }}'
           ANIM_TYPE='${{ github.event.client_payload.animation_type }}'
 
+          cd python/mesh_toolkit
           uv run python -c "
+          import os
+          from pathlib import Path
           from mesh_toolkit.client import MeshyClient
           from mesh_toolkit.persistence.repository import TaskRepository
 
+          # Get repo root
+          repo_root = Path(os.environ.get('GITHUB_WORKSPACE', '../..'))
+          models_base = repo_root / 'client/public/models'
+
           client = MeshyClient()
-          repo = TaskRepository()
+          repo = TaskRepository(base_path=str(models_base))
 
           result = client.get_animation('$TASK_ID')
-          output_path = f'client/public/models/$SPECIES/${ANIM_TYPE}.glb'
+          output_path = models_base / '$SPECIES' / '${ANIM_TYPE}.glb'
+          output_path.parent.mkdir(parents=True, exist_ok=True)
 
-          client.download_file(result.model_url, output_path)
+          client.download_file(result.model_url, str(output_path))
           print(f'Downloaded: {output_path}')
 
           repo.record_task_update(
@@ -337,7 +349,7 @@ jobs:
               spec_hash='${{ github.event.client_payload.spec_hash }}',
               task_id='$TASK_ID',
               status='SUCCEEDED',
-              result_paths={'glb': output_path}
+              result_paths={'glb': str(output_path.relative_to(repo_root))}
           )
           "
 
@@ -353,16 +365,26 @@ jobs:
           fi
 
   # HITL Review notification
+  # Runs when any of the processing jobs succeed (they're mutually exclusive per webhook type)
   notify-review:
     needs: [process-static, process-rigged, process-animated]
-    if: always() && !cancelled()
+    if: |
+      always() && !cancelled() &&
+      (needs.process-static.result == 'success' ||
+       needs.process-rigged.result == 'success' ||
+       needs.process-animated.result == 'success')
     runs-on: ubuntu-latest
     steps:
       - name: Create review issue
         uses: actions/github-script@v7
         with:
           script: |
-            const species = '${{ github.event.client_payload.species }}' || '${{ inputs.species }}';
+            // Handle empty string case - check for actual value, not just truthy
+            const clientPayloadSpecies = '${{ github.event.client_payload.species }}';
+            const inputSpecies = '${{ inputs.species }}';
+            const species = (clientPayloadSpecies && clientPayloadSpecies.trim() !== '')
+              ? clientPayloadSpecies
+              : (inputSpecies && inputSpecies.trim() !== '' ? inputSpecies : 'unknown');
 
             await github.rest.issues.create({
               owner: context.repo.owner,
