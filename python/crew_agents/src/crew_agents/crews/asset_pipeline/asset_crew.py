@@ -11,7 +11,7 @@ This crew handles:
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 
-from crew_agents.config.llm import default_llm
+from crew_agents.config.llm import get_llm
 
 
 @CrewBase
@@ -31,7 +31,7 @@ class AssetPipelineCrew:
         """Overall asset strategy."""
         return Agent(
             config=self.agents_config["asset_director"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 
@@ -40,7 +40,7 @@ class AssetPipelineCrew:
         """Meshy prompt optimization."""
         return Agent(
             config=self.agents_config["prompt_engineer"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 
@@ -49,7 +49,7 @@ class AssetPipelineCrew:
         """Quality assessment."""
         return Agent(
             config=self.agents_config["asset_qa"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 

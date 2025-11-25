@@ -11,7 +11,7 @@ This crew implements:
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 
-from crew_agents.config.llm import default_llm
+from crew_agents.config.llm import get_llm
 
 
 @CrewBase
@@ -31,7 +31,7 @@ class ECSImplementationCrew:
         """Component schema design."""
         return Agent(
             config=self.agents_config["ecs_architect"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 
@@ -40,7 +40,7 @@ class ECSImplementationCrew:
         """TypeScript implementation."""
         return Agent(
             config=self.agents_config["typescript_engineer"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 
@@ -49,7 +49,7 @@ class ECSImplementationCrew:
         """System logic implementation."""
         return Agent(
             config=self.agents_config["systems_engineer"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 

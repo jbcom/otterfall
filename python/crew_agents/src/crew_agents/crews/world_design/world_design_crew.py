@@ -11,7 +11,7 @@ This crew defines WHAT the game world contains:
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 
-from crew_agents.config.llm import default_llm
+from crew_agents.config.llm import get_llm
 
 
 @CrewBase
@@ -31,7 +31,7 @@ class WorldDesignCrew:
         """High-level world structure and rules."""
         return Agent(
             config=self.agents_config["world_architect"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 
@@ -40,7 +40,7 @@ class WorldDesignCrew:
         """Individual biome design and characteristics."""
         return Agent(
             config=self.agents_config["biome_designer"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 
@@ -49,7 +49,7 @@ class WorldDesignCrew:
         """Ecological relationships and resource cycles."""
         return Agent(
             config=self.agents_config["ecosystem_specialist"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 

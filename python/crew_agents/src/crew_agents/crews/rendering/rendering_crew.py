@@ -11,7 +11,7 @@ This crew implements:
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 
-from crew_agents.config.llm import default_llm
+from crew_agents.config.llm import get_llm
 
 
 @CrewBase
@@ -30,7 +30,7 @@ class RenderingCrew:
         """GLSL shader development."""
         return Agent(
             config=self.agents_config["shader_engineer"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 
@@ -39,7 +39,7 @@ class RenderingCrew:
         """React Three Fiber implementation."""
         return Agent(
             config=self.agents_config["r3f_specialist"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 
@@ -48,7 +48,7 @@ class RenderingCrew:
         """Mobile optimization."""
         return Agent(
             config=self.agents_config["performance_engineer"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 

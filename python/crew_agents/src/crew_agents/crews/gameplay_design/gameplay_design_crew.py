@@ -12,7 +12,7 @@ This crew defines:
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 
-from crew_agents.config.llm import default_llm
+from crew_agents.config.llm import get_llm
 
 
 @CrewBase
@@ -31,7 +31,7 @@ class GameplayDesignCrew:
         """Core game systems and loops."""
         return Agent(
             config=self.agents_config["systems_designer"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 
@@ -40,7 +40,7 @@ class GameplayDesignCrew:
         """Combat mechanics and feel."""
         return Agent(
             config=self.agents_config["combat_designer"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 
@@ -49,7 +49,7 @@ class GameplayDesignCrew:
         """Resources, progression, rewards."""
         return Agent(
             config=self.agents_config["economy_designer"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 

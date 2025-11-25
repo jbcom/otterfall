@@ -12,7 +12,7 @@ This crew defines:
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 
-from crew_agents.config.llm import default_llm
+from crew_agents.config.llm import get_llm
 
 
 @CrewBase
@@ -32,7 +32,7 @@ class CreatureDesignCrew:
         """Overall creature concept and stats."""
         return Agent(
             config=self.agents_config["creature_designer"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 
@@ -41,7 +41,7 @@ class CreatureDesignCrew:
         """AI behavior and state machines."""
         return Agent(
             config=self.agents_config["behavior_specialist"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 
@@ -50,7 +50,7 @@ class CreatureDesignCrew:
         """Numerical balance and progression."""
         return Agent(
             config=self.agents_config["stats_balancer"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 

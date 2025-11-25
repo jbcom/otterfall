@@ -11,7 +11,7 @@ This crew validates:
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 
-from crew_agents.config.llm import default_llm
+from crew_agents.config.llm import get_llm
 
 
 @CrewBase
@@ -31,7 +31,7 @@ class QAValidationCrew:
         """Reviews design documents."""
         return Agent(
             config=self.agents_config["design_reviewer"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 
@@ -40,7 +40,7 @@ class QAValidationCrew:
         """Reviews code outputs."""
         return Agent(
             config=self.agents_config["code_reviewer"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 
@@ -49,7 +49,7 @@ class QAValidationCrew:
         """Tests integration points."""
         return Agent(
             config=self.agents_config["integration_tester"],
-            llm=default_llm,
+            llm=get_llm(),
             verbose=True,
         )
 
