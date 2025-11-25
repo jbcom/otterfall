@@ -1,11 +1,13 @@
-FROM node:24-bookworm-slim
+# Start with uv base image (Python 3.13 + uv pre-configured)
+# This gives us proper Python tooling out of the box
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
 
 # =============================================================================
 # SYSTEM DEPENDENCIES
 # =============================================================================
 # Single consolidated layer for all apt packages to minimize image size
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Build essentials (required for native Node modules: better-sqlite3, etc.)
+    # Build essentials (required for native Node modules: better-sqlite3, esbuild, etc.)
     build-essential \
     pkg-config \
     # Version control
@@ -15,9 +17,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     wget \
     ca-certificates \
-    # Python runtime (required for uv and CrewAI agents)
-    python3 \
-    python3-pip \
     # Playwright/Chromium dependencies (headless browser testing)
     chromium \
     chromium-driver \
@@ -48,14 +47,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN git lfs install --system --skip-smudge
 
 # =============================================================================
+# NODE.JS INSTALLATION
+# =============================================================================
+# Install Node.js 24.x from NodeSource
+ENV NODE_MAJOR=24
+RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/* && \
+    node --version && npm --version
+
+# =============================================================================
+# NODE.JS PACKAGE MANAGER (pnpm)
+# =============================================================================
+# MUST match package.json "packageManager" field exactly
+ENV PNPM_HOME=/root/.local/share/pnpm
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && \
+    corepack prepare pnpm@9.15.0 --activate && \
+    pnpm --version
+
+# =============================================================================
 # DEVELOPER TOOLS
 # =============================================================================
 # Install tools in a single layer to reduce image size
-
-# Python package manager (uv) - Required for process-compose.yaml workflows
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    mv /root/.local/bin/uv /usr/local/bin/ && \
-    uv --version
 
 # Just command runner - Task automation
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | \
@@ -76,16 +90,6 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
     apt-get update && \
     apt-get install -y gh && \
     rm -rf /var/lib/apt/lists/*
-
-# =============================================================================
-# NODE.JS PACKAGE MANAGER (pnpm)
-# =============================================================================
-# MUST match package.json "packageManager" field exactly
-ENV PNPM_HOME=/root/.local/share/pnpm
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && \
-    corepack prepare pnpm@9.15.0 --activate && \
-    pnpm --version
 
 # =============================================================================
 # PLAYWRIGHT BROWSER CACHE
