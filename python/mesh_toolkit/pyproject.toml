@@ -2,7 +2,7 @@
 name = "mesh-toolkit"
 version = "0.1.0"
 description = "Meshy SDK for game asset generation"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
     "httpx>=0.28.1",
     "tenacity>=9.1.2",
