@@ -1,13 +1,14 @@
-
 """Batch Generation Flow - Generate multiple species/biomes in parallel."""
 
-from crewai.flow.flow import Flow, start, listen
+from typing import Any, Dict, List
+
+from crewai.flow.flow import Flow, listen, start
 from pydantic import BaseModel
-from typing import List, Dict, Any
 
 
 class BatchGenerationState(BaseModel):
     """State for Batch Generation workflow."""
+
     id: str = ""
     species_list: List[str] = []
     generation_results: Dict[str, Any] = {}
@@ -16,10 +17,10 @@ class BatchGenerationState(BaseModel):
 class BatchGenerationFlow(Flow[BatchGenerationState]):
     """
     Generate multiple assets in batch mode.
-    
+
     Uses parallel execution for efficiency.
     """
-    
+
     initial_state = BatchGenerationState
     name = "batch_generation_flow"
 
@@ -33,21 +34,17 @@ class BatchGenerationFlow(Flow[BatchGenerationState]):
     def generate_all_species(self, species_list):
         """Generate all species in parallel."""
         from mesh_toolkit.services.text3d_service import Text3DService
-        
+
         service = Text3DService()
         results = {}
-        
+
         for species in species_list:
             print(f"Submitting generation for: {species}")
             result = service.submit_task(
-                species=species,
-                prompt=f"A realistic {species} suitable for a game environment"
+                species=species, prompt=f"A realistic {species} suitable for a game environment"
             )
-            results[species] = {
-                "task_id": result.task_id,
-                "status": "submitted"
-            }
-        
+            results[species] = {"task_id": result.task_id, "status": "submitted"}
+
         self.state.generation_results = results
         print(f"\n{len(results)} species submitted for generation")
         return results
@@ -57,10 +54,6 @@ class BatchGenerationFlow(Flow[BatchGenerationState]):
         """Monitor generation progress."""
         print("\nMonitoring batch generation progress...")
         print(f"Total species: {len(results)}")
-        
+
         # In production, this polls for completion
-        return {
-            "total": len(results),
-            "completed": 0,
-            "in_progress": len(results)
-        }
+        return {"total": len(results), "completed": 0, "in_progress": len(results)}

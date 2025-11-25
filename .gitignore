@@ -73,7 +73,14 @@ env/
 # Logs
 ########################################
 logs/
+!logs/.gitkeep
 *.log
+
+########################################
+# ConPort Database
+########################################
+context_portal/
+!context_portal/.gitkeep
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

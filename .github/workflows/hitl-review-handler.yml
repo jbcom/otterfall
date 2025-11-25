@@ -1,0 +1,183 @@
+# HITL Review Handler - Process human feedback on generated assets/code
+#
+# Triggered by issue comments with review commands:
+# - /approve - Approve and integrate
+# - /reject <reason> - Reject with feedback
+# - /regenerate - Regenerate with same params
+# - /tweak <adjustments> - Regenerate with adjustments
+
+name: HITL Review Handler
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  process-review:
+    # Only run on issues with hitl-review label
+    if: |
+      contains(github.event.issue.labels.*.name, 'hitl-review') &&
+      (startsWith(github.event.comment.body, '/approve') ||
+       startsWith(github.event.comment.body, '/reject') ||
+       startsWith(github.event.comment.body, '/regenerate') ||
+       startsWith(github.event.comment.body, '/tweak'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Parse review command
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = context.payload.comment.body;
+            const lines = comment.split('\n');
+            const commandLine = lines[0].trim();
+
+            let command = '';
+            let args = '';
+
+            if (commandLine.startsWith('/approve')) {
+              command = 'approve';
+              args = commandLine.replace('/approve', '').trim();
+            } else if (commandLine.startsWith('/reject')) {
+              command = 'reject';
+              args = commandLine.replace('/reject', '').trim();
+            } else if (commandLine.startsWith('/regenerate')) {
+              command = 'regenerate';
+              args = commandLine.replace('/regenerate', '').trim();
+            } else if (commandLine.startsWith('/tweak')) {
+              command = 'tweak';
+              args = commandLine.replace('/tweak', '').trim();
+            }
+
+            core.setOutput('command', command);
+            core.setOutput('args', args);
+            core.setOutput('reviewer', context.payload.comment.user.login);
+
+            console.log(`Parsed: command=${command}, args=${args}`);
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python with uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install Python
+        run: uv python install 3.11
+
+      - name: Install dependencies
+        run: |
+          cd python/crew_agents
+          uv sync --all-extras
+
+      - name: Process approval
+        if: steps.parse.outputs.command == 'approve'
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: |
+          cd python/crew_agents
+
+          # Extract species from issue title (passed via env to prevent injection)
+          SPECIES=$(echo "$ISSUE_TITLE" | grep -oP '(?<=: )\w+' || echo "unknown")
+
+          echo "Approving assets for: $SPECIES"
+
+          # Run asset integration flow
+          uv run python -m crew_agents.run_flow asset_integration
+
+      - name: Process rejection
+        if: steps.parse.outputs.command == 'reject'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const reason = '${{ steps.parse.outputs.args }}';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## Review: Rejected
+
+              **Reviewer:** @${{ steps.parse.outputs.reviewer }}
+              **Reason:** ${reason || 'No reason provided'}
+
+              The assets have been marked for revision. CrewAI will analyze the feedback and prepare a regeneration plan.`
+            });
+
+            // Add rejected label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['revision-needed']
+            });
+
+      - name: Process regeneration
+        if: steps.parse.outputs.command == 'regenerate' || steps.parse.outputs.command == 'tweak'
+        env:
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          FLOW_ARGS: ${{ steps.parse.outputs.args }}
+        run: |
+          cd python/crew_agents
+
+          # Extract species from issue title (passed via env to prevent injection)
+          SPECIES=$(echo "$ISSUE_TITLE" | grep -oP '(?<=: )\w+' || echo "unknown")
+          ADJUSTMENTS="$FLOW_ARGS"
+
+          echo "Regenerating $SPECIES with adjustments: $ADJUSTMENTS"
+
+          # Re-run meshy asset flow with adjustments
+          if [[ -n "$ADJUSTMENTS" ]]; then
+            uv run python -m crew_agents.run_flow meshy_asset "$SPECIES" "$ADJUSTMENTS"
+          else
+            uv run python -m crew_agents.run_flow meshy_asset "$SPECIES"
+          fi
+
+      - name: Update issue status
+        if: steps.parse.outputs.command == 'approve'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## Review: Approved
+
+              **Reviewer:** @${{ steps.parse.outputs.reviewer }}
+
+              The assets have been approved and are being integrated into the ECS.
+              A PR will be created shortly with the integration changes.`
+            });
+
+            // Close the issue
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: 'closed',
+              labels: ['approved', 'integrated']
+            });
+
+      - name: Commit any changes
+        run: |
+          git config user.name "CrewAI Bot"
+          git config user.email "crewai-bot@github.actions"
+
+          if [[ -n $(git status --porcelain) ]]; then
+            git add -A
+            git commit -m "chore(hitl): Process ${{ steps.parse.outputs.command }} review
+
+            Reviewer: ${{ steps.parse.outputs.reviewer }}
+            Issue: #${{ github.event.issue.number }}"
+            git push
+          fi

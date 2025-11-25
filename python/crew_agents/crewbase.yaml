@@ -688,40 +688,53 @@ tasks:
   # ==============================================================================
 
   # TDD Prototype Workflow - Standard 4-phase pattern for any prototype
+  #
+  # NOTE: Separate anchors are needed for each workflow phase because YAML does not support
+  # referencing subfields of an alias (e.g., *anchor.subfield). This means we cannot define
+  # a single anchor for the whole workflow and then reference only a phase within it.
+  # Instead, each phase is anchored individually for reuse.
+  # See: https://yaml.org/spec/1.2.2/#id2760395
+  #
+  x-tdd-design-phase: &tdd_design_phase
+    agent: rendering_engineer
+    context_required: true
+    human_input: true
+    outputs:
+      - technical_design_document
+      - component_dependency_graph
+      - acceptance_criteria_checklist
+
+  x-tdd-implementation-phase: &tdd_implementation_phase
+    agent: rendering_engineer
+    context_from_design: true
+    outputs:
+      - component_files
+      - shader_files
+      - integration_points
+
+  x-tdd-validation-phase: &tdd_validation_phase
+    agent: qa_validator
+    context_from_implementation: true
+    human_input: true  # HITL approval checkpoint
+    outputs:
+      - validation_report
+      - performance_metrics
+      - approval_recommendation
+
+  x-tdd-documentation-phase: &tdd_documentation_phase
+    agent: technical_writer
+    context_from_all: true
+    outputs:
+      - updated_conport
+      - integration_guide
+      - handoff_notes
+
+  # Combined workflow reference (for documentation)
   x-tdd-prototype-workflow: &tdd_prototype_workflow
-    design_phase:
-      agent: rendering_engineer
-      context_required: true
-      human_input: true
-      outputs:
-        - technical_design_document
-        - component_dependency_graph
-        - acceptance_criteria_checklist
-
-    implementation_phase:
-      agent: rendering_engineer
-      context_from_design: true
-      outputs:
-        - component_files
-        - shader_files
-        - integration_points
-
-    validation_phase:
-      agent: qa_validator
-      context_from_implementation: true
-      human_input: true  # HITL approval checkpoint
-      outputs:
-        - validation_report
-        - performance_metrics
-        - approval_recommendation
-
-    documentation_phase:
-      agent: technical_writer
-      context_from_all: true
-      outputs:
-        - updated_conport
-        - integration_guide
-        - handoff_notes
+    design_phase: *tdd_design_phase
+    implementation_phase: *tdd_implementation_phase
+    validation_phase: *tdd_validation_phase
+    documentation_phase: *tdd_documentation_phase
 
   # Meshy Asset Generation Workflow - Reusable for any species
   x-meshy-asset-workflow: &meshy_asset_workflow
@@ -760,7 +773,7 @@ tasks:
     # PHASE: MESHY GLB VALIDATION - First Real Asset Test
     # -------------------------------------------------------------------------
     design_meshy_glb_test_sequence:
-      <<: *tdd_prototype_workflow.design_phase
+      <<: *tdd_design_phase
       description: |
         Design the Meshy GLB validation sequence for HITL review.
 
@@ -859,7 +872,7 @@ tasks:
       human_input: true
 
     implement_meshy_glb_pipeline:
-      <<: *tdd_prototype_workflow.implementation_phase
+      <<: *tdd_implementation_phase
       description: |
         Implement the Meshy GLB generation pipeline using mesh_toolkit.
 
@@ -905,7 +918,7 @@ tasks:
       context: [design_meshy_glb_test_sequence]
 
     implement_hitl_review_prototype:
-      <<: *tdd_prototype_workflow.validation_phase
+      <<: *tdd_validation_phase
       description: |
         Create the HITL review prototype with standardized review UI.
 

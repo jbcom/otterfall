@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
     "dev": "tsx server/index.ts",
     "build": "pnpm run check && vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
@@ -10,6 +11,10 @@
     "check": "tsc --noEmit",
     "check:watch": "tsc --noEmit --watch",
     "validate": "pnpm run check && pnpm run lint && pnpm run format:check",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
     "db:push": "drizzle-kit push",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
@@ -120,6 +125,8 @@
   "devDependencies": {
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
     "@tailwindcss/typography": "^0.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
     "@types/connect-pg-simple": "^7.0.3",
     "@types/express": "4.17.21",
     "@types/express-session": "^1.18.2",
@@ -132,11 +139,25 @@
     "@vitejs/plugin-react": "^4.7.0",
     "drizzle-kit": "^0.31.7",
     "esbuild": "^0.25.12",
+    "happy-dom": "^20.0.10",
+    "jsdom": "^27.2.0",
     "tsx": "^4.20.6",
     "typescript": "5.6.3",
-    "vite": "^7.2.2"
+    "vite": "^7.2.2",
+    "vitest": "^4.0.14"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.9"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "bufferutil",
+      "esbuild"
+    ],
+    "overrides": {
+      "esbuild@<=0.24.2": ">=0.25.0",
+      "prismjs@<1.30.0": ">=1.30.0",
+      "glob@>=10.3.7 <=11.0.3": ">=11.1.0"
+    }
   }
 }
