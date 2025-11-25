@@ -159,6 +159,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # browser-actions/setup-chrome for reliable Chrome installation
+      - name: Setup Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+        id: setup-chrome
+
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
@@ -171,31 +178,14 @@ jobs:
       - name: Install dependencies with test extras
         run: uv sync --all-extras
 
-      # Playwright best practice: cache browser binaries
-      - name: Get Playwright version
-        id: playwright-version
-        run: |
-          PLAYWRIGHT_VERSION=$(uv run python -c "import playwright; print(playwright.__version__)")
-          echo "version=$PLAYWRIGHT_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
-
-      - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: uv run playwright install --with-deps chromium
-
-      - name: Install Playwright deps only
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
+      # Playwright setup - use system Chrome when available
+      - name: Install Playwright dependencies
         run: uv run playwright install-deps chromium
 
       - name: Run integration tests
         env:
           MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+          CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
         run: |
           uv run pytest ../tests/integration \
             -v --tb=short \
