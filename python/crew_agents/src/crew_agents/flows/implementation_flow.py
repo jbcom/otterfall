@@ -10,38 +10,37 @@ Flow sequence:
 Based on the write_a_book_with_flows pattern from CrewAI examples.
 """
 
-from typing import Optional
-from pydantic import BaseModel
 from crewai.flow.flow import Flow, listen, router, start
+from pydantic import BaseModel
 
 from crew_agents.crews.ecs_implementation.ecs_crew import ECSImplementationCrew
-from crew_agents.crews.rendering.rendering_crew import RenderingCrew
 from crew_agents.crews.qa_validation.qa_crew import QAValidationCrew
+from crew_agents.crews.rendering.rendering_crew import RenderingCrew
 
 
 class ImplementationState(BaseModel):
     """State maintained throughout implementation."""
-    
+
     # Design inputs
     world_design: str = ""
     creature_design: str = ""
     gameplay_design: str = ""
-    
+
     # Generated code
     ecs_components: str = ""
     ecs_systems: str = ""
     rendering_code: str = ""
-    
+
     # Review results
     component_review: str = ""
     systems_review: str = ""
     rendering_review: str = ""
-    
+
     # Approval status
     components_approved: bool = False
     systems_approved: bool = False
     rendering_approved: bool = False
-    
+
     # Retry tracking
     retry_counts: dict = {}
     max_retries: int = 2
@@ -50,7 +49,7 @@ class ImplementationState(BaseModel):
 class ImplementationFlow(Flow[ImplementationState]):
     """
     Orchestrates code implementation from design docs.
-    
+
     Takes design outputs and implements them as code,
     with code review gates at each stage.
     """
@@ -61,15 +60,15 @@ class ImplementationFlow(Flow[ImplementationState]):
     def implement_ecs_components(self):
         """Start by implementing ECS components."""
         print("🏗️ Implementing ECS Components...")
-        
+
         crew = ECSImplementationCrew()
         result = crew.crew().kickoff(
             inputs={
                 "creature_design": self.state.creature_design,
-                "gameplay_design": self.state.gameplay_design
+                "gameplay_design": self.state.gameplay_design,
             }
         )
-        
+
         self.state.ecs_components = result.raw
         return result.raw
 
@@ -77,12 +76,10 @@ class ImplementationFlow(Flow[ImplementationState]):
     def review_components(self, code: str):
         """Review ECS component code."""
         print("🔍 Reviewing ECS Components...")
-        
+
         qa_crew = QAValidationCrew()
-        result = qa_crew.crew().kickoff(
-            inputs={"code": code, "code_type": "ecs_components"}
-        )
-        
+        result = qa_crew.crew().kickoff(inputs={"code": code, "code_type": "ecs_components"})
+
         self.state.component_review = result.raw
         return result.raw
 
@@ -102,17 +99,17 @@ class ImplementationFlow(Flow[ImplementationState]):
     @listen("retry_components")
     def retry_components(self):
         """Retry component implementation."""
-        print(f"🔄 Retrying ECS Components...")
-        
+        print("🔄 Retrying ECS Components...")
+
         crew = ECSImplementationCrew()
         result = crew.crew().kickoff(
             inputs={
                 "creature_design": self.state.creature_design,
                 "gameplay_design": self.state.gameplay_design,
-                "feedback": self.state.component_review
+                "feedback": self.state.component_review,
             }
         )
-        
+
         self.state.ecs_components = result.raw
         return result.raw
 
@@ -125,16 +122,16 @@ class ImplementationFlow(Flow[ImplementationState]):
     def implement_ecs_systems(self):
         """Implement ECS systems."""
         print("⚙️ Implementing ECS Systems...")
-        
+
         crew = ECSImplementationCrew()
         result = crew.crew().kickoff(
             inputs={
                 "components": self.state.ecs_components,
                 "gameplay_design": self.state.gameplay_design,
-                "task_focus": "systems"
+                "task_focus": "systems",
             }
         )
-        
+
         self.state.ecs_systems = result.raw
         return result.raw
 
@@ -142,12 +139,10 @@ class ImplementationFlow(Flow[ImplementationState]):
     def review_systems(self, code: str):
         """Review ECS systems code."""
         print("🔍 Reviewing ECS Systems...")
-        
+
         qa_crew = QAValidationCrew()
-        result = qa_crew.crew().kickoff(
-            inputs={"code": code, "code_type": "ecs_systems"}
-        )
-        
+        result = qa_crew.crew().kickoff(inputs={"code": code, "code_type": "ecs_systems"})
+
         self.state.systems_review = result.raw
         return result.raw
 
@@ -167,18 +162,18 @@ class ImplementationFlow(Flow[ImplementationState]):
     @listen("retry_systems")
     def retry_systems(self):
         """Retry systems implementation."""
-        print(f"🔄 Retrying ECS Systems...")
-        
+        print("🔄 Retrying ECS Systems...")
+
         crew = ECSImplementationCrew()
         result = crew.crew().kickoff(
             inputs={
                 "components": self.state.ecs_components,
                 "gameplay_design": self.state.gameplay_design,
                 "task_focus": "systems",
-                "feedback": self.state.systems_review
+                "feedback": self.state.systems_review,
             }
         )
-        
+
         self.state.ecs_systems = result.raw
         return result.raw
 
@@ -191,15 +186,15 @@ class ImplementationFlow(Flow[ImplementationState]):
     def implement_rendering(self):
         """Implement rendering code."""
         print("🎨 Implementing Rendering...")
-        
+
         crew = RenderingCrew()
         result = crew.crew().kickoff(
             inputs={
                 "world_design": self.state.world_design,
-                "ecs_components": self.state.ecs_components
+                "ecs_components": self.state.ecs_components,
             }
         )
-        
+
         self.state.rendering_code = result.raw
         return result.raw
 
@@ -207,20 +202,18 @@ class ImplementationFlow(Flow[ImplementationState]):
     def review_rendering(self, code: str):
         """Review rendering code."""
         print("🔍 Reviewing Rendering...")
-        
+
         qa_crew = QAValidationCrew()
-        result = qa_crew.crew().kickoff(
-            inputs={"code": code, "code_type": "rendering"}
-        )
-        
+        result = qa_crew.crew().kickoff(inputs={"code": code, "code_type": "rendering"})
+
         self.state.rendering_review = result.raw
         self.state.rendering_approved = "APPROVED" in result.raw.upper()
-        
-        print(f"✅ Implementation Phase Complete!")
+
+        print("✅ Implementation Phase Complete!")
         print(f"   Components: {'✅' if self.state.components_approved else '⚠️'}")
         print(f"   Systems: {'✅' if self.state.systems_approved else '⚠️'}")
         print(f"   Rendering: {'✅' if self.state.rendering_approved else '⚠️'}")
-        
+
         return self.state
 
 
@@ -230,6 +223,6 @@ async def run_implementation(design_state: dict):
     flow.state.world_design = design_state.get("world_design", "")
     flow.state.creature_design = design_state.get("creature_design", "")
     flow.state.gameplay_design = design_state.get("gameplay_design", "")
-    
+
     result = await flow.kickoff_async()
     return result

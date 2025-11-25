@@ -12,9 +12,10 @@ Flow sequence:
 This flow includes Human-in-the-Loop gates for asset approval.
 """
 
-from typing import Optional, List
-from pydantic import BaseModel
+from typing import List
+
 from crewai.flow.flow import Flow, listen, router, start
+from pydantic import BaseModel
 
 from crew_agents.crews.asset_pipeline.asset_crew import AssetPipelineCrew
 from crew_agents.crews.qa_validation.qa_crew import QAValidationCrew
@@ -22,7 +23,7 @@ from crew_agents.crews.qa_validation.qa_crew import QAValidationCrew
 
 class AssetSpec(BaseModel):
     """Specification for a single asset."""
-    
+
     name: str
     species: str
     description: str
@@ -34,19 +35,19 @@ class AssetSpec(BaseModel):
 
 class AssetState(BaseModel):
     """State maintained throughout asset generation."""
-    
+
     # Input designs
     creature_design: str = ""
     world_design: str = ""
-    
+
     # Asset tracking
     asset_specs: List[dict] = []
     current_asset_index: int = 0
-    
+
     # Review state
     qa_criteria: str = ""
     human_approval_required: List[str] = []
-    
+
     # Results
     approved_assets: List[str] = []
     rejected_assets: List[str] = []
@@ -55,7 +56,7 @@ class AssetState(BaseModel):
 class AssetGenerationFlow(Flow[AssetState]):
     """
     Orchestrates 3D asset generation through Meshy.
-    
+
     Includes automated QA and human-in-the-loop approval gates.
     """
 
@@ -65,34 +66,29 @@ class AssetGenerationFlow(Flow[AssetState]):
     def create_asset_specs(self):
         """Create specifications for all needed assets."""
         print("📋 Creating Asset Specifications...")
-        
+
         crew = AssetPipelineCrew()
         result = crew.crew().kickoff(
             inputs={
                 "creature_design": self.state.creature_design,
                 "world_design": self.state.world_design,
-                "task_focus": "specifications"
+                "task_focus": "specifications",
             }
         )
-        
+
         # Parse result into asset specs
         # In production, this would parse the structured output
-        print(f"Created specifications for assets")
+        print("Created specifications for assets")
         return result.raw
 
     @listen(create_asset_specs)
     def define_qa_criteria(self, specs: str):
         """Define QA criteria for asset review."""
         print("✅ Defining QA Criteria...")
-        
+
         crew = AssetPipelineCrew()
-        result = crew.crew().kickoff(
-            inputs={
-                "asset_specs": specs,
-                "task_focus": "qa_criteria"
-            }
-        )
-        
+        result = crew.crew().kickoff(inputs={"asset_specs": specs, "task_focus": "qa_criteria"})
+
         self.state.qa_criteria = result.raw
         return result.raw
 
@@ -100,50 +96,46 @@ class AssetGenerationFlow(Flow[AssetState]):
     def generate_prompts(self, qa_criteria: str):
         """Generate Meshy prompts for each asset."""
         print("✍️ Generating Meshy Prompts...")
-        
+
         crew = AssetPipelineCrew()
         result = crew.crew().kickoff(
             inputs={
                 "creature_design": self.state.creature_design,
                 "qa_criteria": qa_criteria,
-                "task_focus": "prompts"
+                "task_focus": "prompts",
             }
         )
-        
+
         return result.raw
 
     @listen(generate_prompts)
     def queue_for_generation(self, prompts: str):
         """Queue assets for Meshy generation."""
         print("📤 Queueing Assets for Generation...")
-        
+
         # In production, this would:
         # 1. Parse prompts
         # 2. Call Meshy API for each asset
         # 3. Wait for results
         # 4. Store generated assets
-        
+
         # For now, output the generation queue
-        return {
-            "status": "queued",
-            "prompts": prompts,
-            "next_step": "meshy_webhook"
-        }
+        return {"status": "queued", "prompts": prompts, "next_step": "meshy_webhook"}
 
     @listen(queue_for_generation)
     def automated_qa_review(self, generation_result: dict):
         """Run automated QA on generated assets."""
         print("🔍 Running Automated QA...")
-        
+
         qa_crew = QAValidationCrew()
         result = qa_crew.crew().kickoff(
             inputs={
                 "assets": generation_result,
                 "qa_criteria": self.state.qa_criteria,
-                "task_type": "asset_qa"
+                "task_type": "asset_qa",
             }
         )
-        
+
         return result.raw
 
     @router(automated_qa_review)
@@ -153,42 +145,42 @@ class AssetGenerationFlow(Flow[AssetState]):
         # If critical issues, reject and regenerate
         # If minor issues, flag for human review
         # If good, proceed to human approval
-        
+
         return "human_approval_gate"
 
     @listen("human_approval_gate")
     def create_hitl_issue(self):
         """Create GitHub issue for human approval."""
         print("👤 Creating HITL Review Request...")
-        
+
         # This would create a GitHub issue using the HITL workflow
         # The actual asset approval happens asynchronously via webhook
-        
+
         return {
             "status": "awaiting_human_approval",
             "review_type": "asset_quality",
-            "assets_pending": self.state.human_approval_required
+            "assets_pending": self.state.human_approval_required,
         }
 
     @listen(create_hitl_issue)
     def finalize_assets(self, approval_result: dict):
         """Finalize approved assets for integration."""
         print("✅ Finalizing Approved Assets...")
-        
+
         # This would be called after human approval (via webhook)
         # It prepares assets for ECS integration
-        
+
         return {
             "approved_assets": self.state.approved_assets,
             "rejected_assets": self.state.rejected_assets,
-            "integration_ready": len(self.state.approved_assets) > 0
+            "integration_ready": len(self.state.approved_assets) > 0,
         }
 
 
 async def run_asset_generation(design_state: dict, species: str = None):
     """
     Run asset generation flow.
-    
+
     Args:
         design_state: Output from GameDesignFlow
         species: Optional specific species to generate (otherwise all)
@@ -196,6 +188,6 @@ async def run_asset_generation(design_state: dict, species: str = None):
     flow = AssetGenerationFlow()
     flow.state.creature_design = design_state.get("creature_design", "")
     flow.state.world_design = design_state.get("world_design", "")
-    
+
     result = await flow.kickoff_async()
     return result

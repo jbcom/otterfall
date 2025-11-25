@@ -18,7 +18,7 @@ from crew_agents.config.llm import get_llm
 class WorldDesignCrew:
     """
     World Design Crew for Rivermarsh.
-    
+
     Creates comprehensive world design documents that define
     the game's biomes, environments, and ecological systems.
     """

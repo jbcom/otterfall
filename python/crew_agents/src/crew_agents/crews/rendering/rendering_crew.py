@@ -18,7 +18,7 @@ from crew_agents.config.llm import get_llm
 class RenderingCrew:
     """
     Rendering Crew for Rivermarsh.
-    
+
     Creates beautiful, performant visuals that run at 60fps on mobile.
     """
 

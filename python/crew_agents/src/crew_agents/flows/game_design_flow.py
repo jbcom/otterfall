@@ -10,36 +10,35 @@ Flow sequence:
 Based on the self_evaluation_loop_flow pattern from CrewAI examples.
 """
 
-from typing import Optional
-from pydantic import BaseModel
 from crewai.flow.flow import Flow, listen, router, start
+from pydantic import BaseModel
 
-from crew_agents.crews.world_design.world_design_crew import WorldDesignCrew
 from crew_agents.crews.creature_design.creature_design_crew import CreatureDesignCrew
 from crew_agents.crews.gameplay_design.gameplay_design_crew import GameplayDesignCrew
 from crew_agents.crews.qa_validation.qa_crew import QAValidationCrew
+from crew_agents.crews.world_design.world_design_crew import WorldDesignCrew
 
 
 class DesignState(BaseModel):
     """State maintained throughout the design flow."""
-    
+
     # Design documents
     world_design: str = ""
     creature_design: str = ""
     gameplay_design: str = ""
-    
+
     # Review feedback
     world_review: str = ""
     creature_review: str = ""
     gameplay_review: str = ""
     integration_review: str = ""
-    
+
     # Approval status
     world_approved: bool = False
     creature_approved: bool = False
     gameplay_approved: bool = False
     integration_approved: bool = False
-    
+
     # Retry tracking
     world_retry_count: int = 0
     creature_retry_count: int = 0
@@ -50,7 +49,7 @@ class DesignState(BaseModel):
 class GameDesignFlow(Flow[DesignState]):
     """
     Orchestrates the complete game design phase.
-    
+
     Runs design crews in sequence with QA validation gates.
     Implements retry logic for designs that don't pass review.
     """
@@ -61,10 +60,10 @@ class GameDesignFlow(Flow[DesignState]):
     def design_world(self):
         """Start with world design."""
         print("🌍 Starting World Design...")
-        
+
         crew = WorldDesignCrew()
         result = crew.crew().kickoff()
-        
+
         self.state.world_design = result.raw
         return result.raw
 
@@ -72,12 +71,12 @@ class GameDesignFlow(Flow[DesignState]):
     def review_world(self, world_design: str):
         """Review world design."""
         print("📋 Reviewing World Design...")
-        
+
         qa_crew = QAValidationCrew()
         result = qa_crew.crew().kickoff(
             inputs={"document": world_design, "doc_type": "world_design"}
         )
-        
+
         self.state.world_review = result.raw
         return result.raw
 
@@ -100,12 +99,10 @@ class GameDesignFlow(Flow[DesignState]):
     def retry_world_design(self):
         """Retry world design with feedback."""
         print(f"🔄 Retrying World Design (attempt {self.state.world_retry_count})...")
-        
+
         crew = WorldDesignCrew()
-        result = crew.crew().kickoff(
-            inputs={"feedback": self.state.world_review}
-        )
-        
+        result = crew.crew().kickoff(inputs={"feedback": self.state.world_review})
+
         self.state.world_design = result.raw
         return result.raw
 
@@ -118,12 +115,10 @@ class GameDesignFlow(Flow[DesignState]):
     def design_creatures(self):
         """Design creatures based on world."""
         print("🦎 Starting Creature Design...")
-        
+
         crew = CreatureDesignCrew()
-        result = crew.crew().kickoff(
-            inputs={"world_design": self.state.world_design}
-        )
-        
+        result = crew.crew().kickoff(inputs={"world_design": self.state.world_design})
+
         self.state.creature_design = result.raw
         return result.raw
 
@@ -131,12 +126,12 @@ class GameDesignFlow(Flow[DesignState]):
     def review_creatures(self, creature_design: str):
         """Review creature design."""
         print("📋 Reviewing Creature Design...")
-        
+
         qa_crew = QAValidationCrew()
         result = qa_crew.crew().kickoff(
             inputs={"document": creature_design, "doc_type": "creature_design"}
         )
-        
+
         self.state.creature_review = result.raw
         return result.raw
 
@@ -157,15 +152,12 @@ class GameDesignFlow(Flow[DesignState]):
     def retry_creature_design(self):
         """Retry creature design with feedback."""
         print(f"🔄 Retrying Creature Design (attempt {self.state.creature_retry_count})...")
-        
+
         crew = CreatureDesignCrew()
         result = crew.crew().kickoff(
-            inputs={
-                "world_design": self.state.world_design,
-                "feedback": self.state.creature_review
-            }
+            inputs={"world_design": self.state.world_design, "feedback": self.state.creature_review}
         )
-        
+
         self.state.creature_design = result.raw
         return result.raw
 
@@ -178,15 +170,15 @@ class GameDesignFlow(Flow[DesignState]):
     def design_gameplay(self):
         """Design gameplay systems."""
         print("🎮 Starting Gameplay Design...")
-        
+
         crew = GameplayDesignCrew()
         result = crew.crew().kickoff(
             inputs={
                 "world_design": self.state.world_design,
-                "creature_design": self.state.creature_design
+                "creature_design": self.state.creature_design,
             }
         )
-        
+
         self.state.gameplay_design = result.raw
         return result.raw
 
@@ -194,12 +186,12 @@ class GameDesignFlow(Flow[DesignState]):
     def review_gameplay(self, gameplay_design: str):
         """Review gameplay design."""
         print("📋 Reviewing Gameplay Design...")
-        
+
         qa_crew = QAValidationCrew()
         result = qa_crew.crew().kickoff(
             inputs={"document": gameplay_design, "doc_type": "gameplay_design"}
         )
-        
+
         self.state.gameplay_review = result.raw
         return result.raw
 
@@ -220,16 +212,16 @@ class GameDesignFlow(Flow[DesignState]):
     def retry_gameplay_design(self):
         """Retry gameplay design with feedback."""
         print(f"🔄 Retrying Gameplay Design (attempt {self.state.gameplay_retry_count})...")
-        
+
         crew = GameplayDesignCrew()
         result = crew.crew().kickoff(
             inputs={
                 "world_design": self.state.world_design,
                 "creature_design": self.state.creature_design,
-                "feedback": self.state.gameplay_review
+                "feedback": self.state.gameplay_review,
             }
         )
-        
+
         self.state.gameplay_design = result.raw
         return result.raw
 
@@ -242,26 +234,26 @@ class GameDesignFlow(Flow[DesignState]):
     def validate_integration(self):
         """Final integration validation."""
         print("🔗 Validating Design Integration...")
-        
+
         qa_crew = QAValidationCrew()
         result = qa_crew.crew().kickoff(
             inputs={
                 "world_design": self.state.world_design,
                 "creature_design": self.state.creature_design,
                 "gameplay_design": self.state.gameplay_design,
-                "task_type": "integration"
+                "task_type": "integration",
             }
         )
-        
+
         self.state.integration_review = result.raw
         self.state.integration_approved = "APPROVED" in result.raw.upper()
-        
-        print(f"✅ Design Phase Complete!")
+
+        print("✅ Design Phase Complete!")
         print(f"   World: {'✅' if self.state.world_approved else '⚠️'}")
         print(f"   Creatures: {'✅' if self.state.creature_approved else '⚠️'}")
         print(f"   Gameplay: {'✅' if self.state.gameplay_approved else '⚠️'}")
         print(f"   Integration: {'✅' if self.state.integration_approved else '⚠️'}")
-        
+
         return self.state
 
 

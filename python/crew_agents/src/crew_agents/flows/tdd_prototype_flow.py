@@ -1,12 +1,12 @@
-
 """TDD Prototype Flow - Standard 4-phase TDD pattern for any prototype."""
 
-from crewai.flow.flow import Flow, start, listen, router
+from crewai.flow.flow import Flow, listen, router, start
 from pydantic import BaseModel
 
 
 class TDDPrototypeState(BaseModel):
     """State for TDD Prototype workflow."""
+
     id: str = ""
     requirements: dict = {}
     design: dict = {}
@@ -20,14 +20,14 @@ class TDDPrototypeState(BaseModel):
 class TDDPrototypeFlow(Flow[TDDPrototypeState]):
     """
     Standard 4-phase TDD pattern for any prototype.
-    
+
     Phases:
     1. Design Phase - Technical design with HITL approval
     2. Implementation Phase - Build based on approved design
     3. Validation Phase - QA testing with HITL approval
     4. Documentation Phase - Update ConPort and create handoff docs
     """
-    
+
     initial_state = TDDPrototypeState
     name = "tdd_prototype_flow"
 
@@ -36,20 +36,20 @@ class TDDPrototypeFlow(Flow[TDDPrototypeState]):
         """Design the vertical slice with technical specifications."""
         try:
             from crew_agents.crew import CrewAgents
+
             crew = CrewAgents()
-            result = crew.kickoff(inputs={
-                "task": "design_phase",
-                "requirements": self.state.requirements
-            })
+            result = crew.kickoff(
+                inputs={"task": "design_phase", "requirements": self.state.requirements}
+            )
         except ImportError:
             # Fallback for testing/development
             print("⚠️  CrewAgents not available, using mock result")
-            result = type('obj', (object,), {
-                'raw': {'design': 'Mock design output', 'approved': True}
-            })
+            result = type(
+                "obj", (object,), {"raw": {"design": "Mock design output", "approved": True}}
+            )
             return result
-        
-        self.state.design = result.raw if hasattr(result, 'raw') else result
+
+        self.state.design = result.raw if hasattr(result, "raw") else result
         return result
 
     @listen(design_phase)
@@ -58,10 +58,10 @@ class TDDPrototypeFlow(Flow[TDDPrototypeState]):
         # In production, this would integrate with HITLReviewControls.tsx
         print("\n=== Design Review Required ===")
         print("Review the design and approve to continue")
-        
+
         # For now, auto-approve; in production this waits for human input
         self.state.design_approved = True
-        
+
         if self.state.design_approved:
             return "implement"
         return "revise_design"
@@ -75,28 +75,22 @@ class TDDPrototypeFlow(Flow[TDDPrototypeState]):
     def implementation_phase(self):
         """Implement based on approved design."""
         from crew_agents.crew import CrewAgents
-        
+
         crew = CrewAgents()
-        result = crew.kickoff(inputs={
-            "task": "implementation_phase",
-            "design": self.state.design
-        })
-        
-        self.state.implementation = result.raw if hasattr(result, 'raw') else result
+        result = crew.kickoff(inputs={"task": "implementation_phase", "design": self.state.design})
+
+        self.state.implementation = result.raw if hasattr(result, "raw") else result
         return result
 
     @listen(implementation_phase)
     def validation_phase(self, impl_result):
         """QA validates implementation."""
         from crew_agents.crew import CrewAgents
-        
+
         crew = CrewAgents()
-        result = crew.kickoff(inputs={
-            "task": "validation_phase",
-            "implementation": impl_result
-        })
-        
-        self.state.validation = result.raw if hasattr(result, 'raw') else result
+        result = crew.kickoff(inputs={"task": "validation_phase", "implementation": impl_result})
+
+        self.state.validation = result.raw if hasattr(result, "raw") else result
         return result
 
     @listen(validation_phase)
@@ -104,10 +98,10 @@ class TDDPrototypeFlow(Flow[TDDPrototypeState]):
         """HITL gate - approve before merge."""
         print("\n=== Validation Review Required ===")
         print("Review validation results and approve to continue")
-        
+
         # For now, auto-approve; in production this waits for human input
         self.state.validation_approved = True
-        
+
         if self.state.validation_approved:
             return "document"
         return "fix_issues"
@@ -121,16 +115,18 @@ class TDDPrototypeFlow(Flow[TDDPrototypeState]):
     def documentation_phase(self):
         """Update ConPort and create handoff docs."""
         from crew_agents.crew import CrewAgents
-        
+
         crew = CrewAgents()
-        result = crew.kickoff(inputs={
-            "task": "documentation_phase",
-            "design": self.state.design,
-            "implementation": self.state.implementation,
-            "validation": self.state.validation
-        })
-        
-        self.state.documentation = result.raw if hasattr(result, 'raw') else result
+        result = crew.kickoff(
+            inputs={
+                "task": "documentation_phase",
+                "design": self.state.design,
+                "implementation": self.state.implementation,
+                "validation": self.state.validation,
+            }
+        )
+
+        self.state.documentation = result.raw if hasattr(result, "raw") else result
         return result
 
     @listen("revise_design")

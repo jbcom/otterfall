@@ -19,7 +19,7 @@ from crew_agents.config.llm import get_llm
 class GameplayDesignCrew:
     """
     Gameplay Design Crew for Rivermarsh.
-    
+
     Creates the core mechanics and systems that make the game fun.
     """
 

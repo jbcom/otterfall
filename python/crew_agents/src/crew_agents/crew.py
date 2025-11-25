@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 """
 Rivermarsh CrewAI Entry Point
@@ -7,11 +6,11 @@ This file is the standard CrewAI entry point that `crewai run` expects.
 It loads configuration from crewbase.yaml and executes the crew.
 """
 
-from crewai import Crew
-from crewai.flow import Flow
-import yaml
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
+import yaml
+from crewai import Crew
 
 
 def get_crewbase_path() -> Path:
@@ -51,32 +50,30 @@ class CrewAgents:
     def _get_crew_for_task(self, task_name: Optional[str] = None) -> Crew:
         """
         Get a crew instance, optionally filtered to a specific task.
-        
+
         When task filtering is needed, creates a fresh crew instance to avoid
         mutating the cached crew's task list.
-        
+
         Args:
             task_name: Optional task name to filter to
-            
+
         Returns:
             Crew instance (cached if no filtering, fresh if filtering)
-            
+
         Raises:
             ValueError: If task_name is provided but not found
         """
         if task_name is None:
             return self.crew
-        
+
         # Create fresh crew for task filtering to avoid mutating cached instance
         crew = Crew.from_yaml(str(self.config_path))
         matching_tasks = [t for t in crew.tasks if t.name == task_name]
-        
+
         if not matching_tasks:
             available = [t.name for t in crew.tasks]
-            raise ValueError(
-                f"Task '{task_name}' not found. Available: {available}"
-            )
-        
+            raise ValueError(f"Task '{task_name}' not found. Available: {available}")
+
         crew.tasks = matching_tasks
         return crew
 
@@ -113,18 +110,18 @@ def load_crewbase():
 def kickoff(inputs: dict = None):
     """
     Main entry point for crewai run.
-    
+
     Args:
         inputs: Optional dict with:
             - task: Specific task name to run
             - All other task inputs from crewbase.yaml
     """
-    config = load_crewbase()
-    
+    load_crewbase()
+
     # CrewAI will automatically load agents/tasks from crewbase.yaml
     # The MCP tools are declared in crewbase.yaml using mcp:// syntax
     crew = Crew.from_yaml(str(Path(__file__).parent.parent.parent / "crewbase.yaml"))
-    
+
     # If specific task requested, filter to that task
     # Use pop() to remove task key so it's not passed to crew.kickoff()
     if inputs and "task" in inputs:
@@ -132,15 +129,15 @@ def kickoff(inputs: dict = None):
         crew.tasks = [t for t in crew.tasks if t.name == task_name]
         if not crew.tasks:
             raise ValueError(f"Task '{task_name}' not found in crewbase.yaml")
-    
+
     return crew.kickoff(inputs=inputs)
 
 
 def train(n_iterations: int = 5, inputs: dict = None):
     """Train the crew using memory/learning features."""
-    config = load_crewbase()
+    load_crewbase()
     crew = Crew.from_yaml(str(Path(__file__).parent.parent.parent / "crewbase.yaml"))
-    
+
     crew.train(n_iterations=n_iterations, inputs=inputs)
 
 

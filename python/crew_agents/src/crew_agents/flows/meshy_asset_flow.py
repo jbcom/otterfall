@@ -1,13 +1,14 @@
-
 """Meshy Asset Pipeline Flow - Generate → Rig → Animate → Retexture → Review."""
 
-from crewai.flow.flow import Flow, start, listen
+from typing import Any, Dict, List
+
+from crewai.flow.flow import Flow, listen, start
 from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
 
 
 class MeshyAssetState(BaseModel):
     """State for Meshy Asset workflow."""
+
     id: str = ""
     species: str = ""
     prompt: str = ""
@@ -43,6 +44,7 @@ class MeshyAssetFlow(Flow[MeshyAssetState]):
         """Lazy-load service factory."""
         if self._factory is None:
             from mesh_toolkit.services.factory import ServiceFactory
+
             self._factory = ServiceFactory()
         return self._factory
 
@@ -53,9 +55,7 @@ class MeshyAssetFlow(Flow[MeshyAssetState]):
         callback_url = self.factory.webhook_url(self.state.species, "static")
 
         result = service.submit_task(
-            species=self.state.species,
-            prompt=self.state.prompt,
-            callback_url=callback_url
+            species=self.state.species, prompt=self.state.prompt, callback_url=callback_url
         )
 
         self.state.static_task_id = result.task_id
@@ -69,9 +69,7 @@ class MeshyAssetFlow(Flow[MeshyAssetState]):
         callback_url = self.factory.webhook_url(self.state.species, "rigged")
 
         result = service.submit_task(
-            species=self.state.species,
-            model_id=static_result.task_id,
-            callback_url=callback_url
+            species=self.state.species, model_id=static_result.task_id, callback_url=callback_url
         )
 
         self.state.rigged_task_id = result.task_id
@@ -89,7 +87,7 @@ class MeshyAssetFlow(Flow[MeshyAssetState]):
             species=self.state.species,
             model_id=rigged_result.task_id,
             animation_id="1",  # Walk
-            callback_url=walk_callback
+            callback_url=walk_callback,
         )
 
         # Submit attack animation
@@ -98,12 +96,12 @@ class MeshyAssetFlow(Flow[MeshyAssetState]):
             species=self.state.species,
             model_id=rigged_result.task_id,
             animation_id="4",  # Attack
-            callback_url=attack_callback
+            callback_url=attack_callback,
         )
 
         self.state.animations = [
             {"name": "walk", "task_id": walk.task_id},
-            {"name": "attack", "task_id": attack.task_id}
+            {"name": "attack", "task_id": attack.task_id},
         ]
 
         print(f"Animation tasks submitted: walk={walk.task_id}, attack={attack.task_id}")
@@ -119,7 +117,7 @@ class MeshyAssetFlow(Flow[MeshyAssetState]):
             species=self.state.species,
             model_id=self.state.static_task_id,
             prompt=self.state.retexture_prompt,
-            callback_url=callback_url
+            callback_url=callback_url,
         )
 
         self.state.retexture_task_id = result.task_id
@@ -142,7 +140,7 @@ class MeshyAssetFlow(Flow[MeshyAssetState]):
             "walk": {"approved": True, "rating": 7},
             "attack": {"approved": True, "rating": 9},
             "variant": {"approved": True, "rating": 8},
-            "notes": "All variants look good, ready for integration"
+            "notes": "All variants look good, ready for integration",
         }
 
         self.state.review_results = review_results

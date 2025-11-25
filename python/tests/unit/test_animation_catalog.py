@@ -97,8 +97,8 @@ class TestAnimationCatalog:
         """Test that AnimationId enum has all animations from the catalog"""
         # Count enum members (excluding private/dunder attributes)
         enum_count = len([member for member in dir(AnimationId) if not member.startswith('_')])
-        # The catalog currently has 688 animations
-        assert enum_count == 688
+        # The catalog currently has 689 animations
+        assert enum_count == 689
     
     def test_no_fallback_logic_on_missing(self, catalog):
         """Test that missing animations raise exceptions, not fallback to defaults"""

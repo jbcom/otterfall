@@ -6,31 +6,30 @@ game systems, following the CrewAI @CrewBase pattern with OpenRouter.
 
 Usage:
     from crew_agents import GameDesignFlow, ImplementationFlow, AssetGenerationFlow
-    
+
     # Run the complete design phase
     design = await GameDesignFlow().kickoff_async()
-    
+
     # Then run implementation
     impl = await ImplementationFlow().kickoff_async(inputs=design)
-    
+
     # Or generate assets
     assets = await AssetGenerationFlow().kickoff_async(inputs=design)
 """
 
+from crew_agents.crews import (
+    AssetPipelineCrew,
+    CreatureDesignCrew,
+    ECSImplementationCrew,
+    GameplayDesignCrew,
+    QAValidationCrew,
+    RenderingCrew,
+    WorldDesignCrew,
+)
 from crew_agents.flows import (
+    AssetGenerationFlow,
     GameDesignFlow,
     ImplementationFlow,
-    AssetGenerationFlow,
-)
-
-from crew_agents.crews import (
-    WorldDesignCrew,
-    CreatureDesignCrew,
-    GameplayDesignCrew,
-    ECSImplementationCrew,
-    RenderingCrew,
-    AssetPipelineCrew,
-    QAValidationCrew,
 )
 
 __version__ = "0.2.0"

@@ -9,7 +9,12 @@ from mesh_toolkit.persistence.repository import TaskRepository
 from mesh_toolkit.webhooks.handler import WebhookHandler
 from mesh_toolkit.webhooks.schemas import MeshyWebhookPayload
 
-pytest_plugins = ["tests.integration.webhook_server.fixtures"]
+# Only load integration fixtures if pyngrok is available
+try:
+    import pyngrok  # noqa: F401
+    pytest_plugins = ["tests.integration.webhook_server.fixtures"]
+except ImportError:
+    pytest_plugins = []
 
 
 @pytest.fixture(scope="session")

@@ -13,9 +13,9 @@ import sys
 from typing import Optional
 
 from crew_agents.flows import (
+    AssetGenerationFlow,
     GameDesignFlow,
     ImplementationFlow,
-    AssetGenerationFlow,
 )
 
 
@@ -25,31 +25,31 @@ async def run_design_flow():
     print("🎮 RIVERMARSH GAME DESIGN FLOW")
     print("=" * 60)
     print()
-    
+
     flow = GameDesignFlow()
     result = await flow.kickoff_async()
-    
+
     print()
     print("=" * 60)
     print("📄 DESIGN OUTPUTS")
     print("=" * 60)
-    
+
     # Save outputs to files
     if result.world_design:
         with open("output/world_design.md", "w") as f:
             f.write(result.world_design)
         print("✅ World design saved to output/world_design.md")
-    
+
     if result.creature_design:
         with open("output/creature_design.md", "w") as f:
             f.write(result.creature_design)
         print("✅ Creature design saved to output/creature_design.md")
-    
+
     if result.gameplay_design:
         with open("output/gameplay_design.md", "w") as f:
             f.write(result.gameplay_design)
         print("✅ Gameplay design saved to output/gameplay_design.md")
-    
+
     return result
 
 
@@ -59,9 +59,9 @@ async def run_implementation_flow(design_state: Optional[dict] = None):
     print("🏗️ RIVERMARSH IMPLEMENTATION FLOW")
     print("=" * 60)
     print()
-    
+
     flow = ImplementationFlow()
-    
+
     # Load design state if not provided
     if design_state:
         flow.state.world_design = design_state.get("world_design", "")
@@ -80,25 +80,25 @@ async def run_implementation_flow(design_state: Optional[dict] = None):
         except FileNotFoundError:
             print("⚠️ No design documents found. Run 'design' flow first.")
             return None
-    
+
     result = await flow.kickoff_async()
-    
+
     # Save outputs
     if result.ecs_components:
         with open("output/ecs_components.ts", "w") as f:
             f.write(result.ecs_components)
         print("✅ ECS components saved to output/ecs_components.ts")
-    
+
     if result.ecs_systems:
         with open("output/ecs_systems.ts", "w") as f:
             f.write(result.ecs_systems)
         print("✅ ECS systems saved to output/ecs_systems.ts")
-    
+
     if result.rendering_code:
         with open("output/rendering.tsx", "w") as f:
             f.write(result.rendering_code)
         print("✅ Rendering code saved to output/rendering.tsx")
-    
+
     return result
 
 
@@ -108,9 +108,9 @@ async def run_asset_flow(design_state: Optional[dict] = None, species: str = Non
     print("🎨 RIVERMARSH ASSET GENERATION FLOW")
     print("=" * 60)
     print()
-    
+
     flow = AssetGenerationFlow()
-    
+
     # Load design state
     if design_state:
         flow.state.creature_design = design_state.get("creature_design", "")
@@ -125,7 +125,7 @@ async def run_asset_flow(design_state: Optional[dict] = None, species: str = Non
         except FileNotFoundError:
             print("⚠️ No design documents found. Run 'design' flow first.")
             return None
-    
+
     result = await flow.kickoff_async()
     return result
 
@@ -136,34 +136,34 @@ async def run_full_pipeline():
     print("🚀 RIVERMARSH FULL DEVELOPMENT PIPELINE")
     print("=" * 60)
     print()
-    
+
     # Phase 1: Design
     print("\n📐 PHASE 1: DESIGN\n")
     design_result = await run_design_flow()
-    
+
     if not design_result:
         print("❌ Design phase failed")
         return
-    
+
     design_state = {
         "world_design": design_result.world_design,
         "creature_design": design_result.creature_design,
         "gameplay_design": design_result.gameplay_design,
     }
-    
+
     # Phase 2: Implementation
     print("\n🏗️ PHASE 2: IMPLEMENTATION\n")
     impl_result = await run_implementation_flow(design_state)
-    
+
     # Phase 3: Assets
     print("\n🎨 PHASE 3: ASSETS\n")
     asset_result = await run_asset_flow(design_state)
-    
+
     print()
     print("=" * 60)
     print("✅ PIPELINE COMPLETE")
     print("=" * 60)
-    
+
     return {
         "design": design_result,
         "implementation": impl_result,
@@ -174,12 +174,12 @@ async def run_full_pipeline():
 def main():
     """CLI entry point."""
     import os
-    
+
     # Ensure output directory exists
     os.makedirs("output", exist_ok=True)
-    
+
     command = sys.argv[1] if len(sys.argv) > 1 else "help"
-    
+
     if command == "design":
         asyncio.run(run_design_flow())
     elif command == "implement":

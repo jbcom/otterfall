@@ -18,7 +18,7 @@ from crew_agents.config.llm import get_llm
 class AssetPipelineCrew:
     """
     Asset Pipeline Crew for Rivermarsh.
-    
+
     Manages the generation of 3D assets through Meshy API
     with quality control and ECS integration.
     """

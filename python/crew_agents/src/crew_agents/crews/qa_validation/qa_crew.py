@@ -18,7 +18,7 @@ from crew_agents.config.llm import get_llm
 class QAValidationCrew:
     """
     QA Validation Crew for Rivermarsh.
-    
+
     Provides quality gates between crews to ensure outputs
     meet standards before passing to the next stage.
     """

@@ -18,7 +18,7 @@ from crew_agents.config.llm import get_llm
 class ECSImplementationCrew:
     """
     ECS Implementation Crew for Rivermarsh.
-    
+
     Implements the Entity Component System using Miniplex
     with strict TypeScript typing.
     """

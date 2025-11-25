@@ -29,3 +29,8 @@ packages = ["src/crew_agents"]
 
 [tool.uv.sources]
 mesh-toolkit = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.6",
+]

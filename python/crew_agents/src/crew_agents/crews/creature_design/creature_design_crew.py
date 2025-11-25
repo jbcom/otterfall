@@ -19,7 +19,7 @@ from crew_agents.config.llm import get_llm
 class CreatureDesignCrew:
     """
     Creature Design Crew for Rivermarsh.
-    
+
     Creates comprehensive species designs including stats,
     behaviors, and visual guidelines.
     """
