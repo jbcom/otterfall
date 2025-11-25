@@ -49,11 +49,10 @@ RUN git lfs install --system --skip-smudge
 # =============================================================================
 # NODE.JS INSTALLATION
 # =============================================================================
-# Install Node.js 24.x from NodeSource
-ENV NODE_MAJOR=24
-RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - && \
-    apt-get install -y nodejs && \
-    rm -rf /var/lib/apt/lists/* && \
+# Install Node.js 24.x - simple binary installation
+ENV NODE_VERSION=24.13.1
+RUN curl -fsSL https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz | \
+    tar -xJ -C /usr/local --strip-components=1 && \
     node --version && npm --version
 
 # =============================================================================
