@@ -77,7 +77,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Actual LFS operations (checkout, pull) happen in GitHub Actions
 RUN git lfs install --system --skip-smudge
 
-# Note: git-lfs package is installed above (line 10)
+# Note: git-lfs package is installed above in the system dependencies section
 # CRITICAL: --skip-smudge prevents workspace crashes with large LFS repos
 # All .glb files (3D models) are tracked via LFS (configured in .gitattributes)
 # GitHub Actions workflows handle actual LFS file operations
