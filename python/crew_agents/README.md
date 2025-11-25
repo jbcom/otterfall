@@ -1,115 +1,127 @@
-# Rivermarsh CrewAI Agents
+# Rivermarsh CrewAI Game Builder
 
-Autonomous AI development crews for Rivermarsh game development.
+AI-powered code generation for the Rivermarsh game, using CrewAI agents that **actually write code** to the codebase.
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     GAME DESIGN FLOW                            │
-├─────────────┬─────────────┬──────────────┬────────────────────┤
-│ World       │ Creature    │ Gameplay     │ QA Validation      │
-│ Design      │ Design      │ Design       │ (gates between     │
-│ Crew        │ Crew        │ Crew         │  each crew)        │
-└──────┬──────┴──────┬──────┴──────┬───────┴────────────────────┘
-       │             │             │
-       ▼             ▼             ▼
+│                     GAME BUILDER CREW                           │
+├─────────────┬─────────────┬─────────────────────────────────────┤
+│ Senior      │ QA          │ Chief                               │
+│ TypeScript  │ Engineer    │ Engineer                            │
+│ Engineer    │             │                                     │
+│             │             │                                     │
+│ • Writes    │ • Reviews   │ • Evaluates                         │
+│   code      │   for       │   completeness                      │
+│ • Uses      │   errors    │ • Final                             │
+│   tools     │             │   approval                          │
+└─────────────┴─────────────┴─────────────────────────────────────┘
+                    │
+                    ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                   IMPLEMENTATION FLOW                           │
-├─────────────┬─────────────┬──────────────┬────────────────────┤
-│ ECS         │ Systems     │ Rendering    │ QA Validation      │
-│ Components  │ Engineer    │ Crew         │ (code review)      │
-│ Crew        │             │              │                    │
-└──────┬──────┴──────┬──────┴──────┬───────┴────────────────────┘
-       │             │             │
-       ▼             ▼             ▼
+│                     TOOLS                                       │
+├─────────────┬─────────────┬─────────────────────────────────────┤
+│ Write Code  │ Read Code   │ List Directory                      │
+│ File        │ File        │ Contents                            │
+│             │             │                                     │
+│ Writes to   │ Reads       │ Lists files                         │
+│ allowed     │ existing    │ in project                          │
+│ directories │ patterns    │                                     │
+└─────────────┴─────────────┴─────────────────────────────────────┘
+                    │
+                    ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                   ASSET GENERATION FLOW                         │
-├─────────────┬─────────────┬──────────────┬────────────────────┤
-│ Asset Specs │ Meshy       │ Automated    │ HITL              │
-│             │ Prompts     │ QA           │ (Human Review)     │
-└─────────────┴─────────────┴──────────────┴────────────────────┘
+│                     KNOWLEDGE BASE                              │
+├─────────────┬─────────────┬─────────────────────────────────────┤
+│ ECS         │ Rendering   │ Game                                │
+│ Patterns    │ Patterns    │ Architecture                        │
+│             │             │                                     │
+│ Working     │ R3F         │ Full game                           │
+│ component   │ component   │ architecture                        │
+│ examples    │ examples    │ documentation                       │
+└─────────────┴─────────────┴─────────────────────────────────────┘
 ```
 
-## Crews
+## How It Works
 
-### Design Crews
+1. **Knowledge Base**: Contains actual working code from the game as reference patterns
+2. **Planning**: CrewAI plans the task step-by-step before execution
+3. **Code Generation**: Senior engineer reads existing patterns, writes new code
+4. **QA Review**: QA engineer checks for errors and convention violations
+5. **Final Approval**: Chief engineer ensures code meets requirements
+6. **Memory**: Agents learn from past interactions to improve
+7. **Training**: Human feedback further improves agent quality
 
-| Crew | Agents | Purpose |
-|------|--------|---------|
-| **WorldDesignCrew** | World Architect, Biome Designer, Ecosystem Specialist | Define world structure, biomes, ecosystems |
-| **CreatureDesignCrew** | Creature Designer, Behavior Specialist, Stats Balancer | Design species, behaviors, balance |
-| **GameplayDesignCrew** | Systems Designer, Combat Designer, Economy Designer | Core loops, combat, progression |
+## Features
 
-### Implementation Crews
-
-| Crew | Agents | Purpose |
-|------|--------|---------|
-| **ECSImplementationCrew** | ECS Architect, TypeScript Engineer, Systems Engineer | Miniplex components and systems |
-| **RenderingCrew** | Shader Engineer, R3F Specialist, Performance Engineer | Visual systems, shaders, optimization |
-
-### Operations Crews
-
-| Crew | Agents | Purpose |
-|------|--------|---------|
-| **AssetPipelineCrew** | Asset Director, Prompt Engineer, Asset QA | 3D asset generation via Meshy |
-| **QAValidationCrew** | Design Reviewer, Code Reviewer, Integration Tester | Quality gates between phases |
+| Feature | Status | Description |
+|---------|--------|-------------|
+| **Code Writing** | ✅ | Agents write actual TypeScript to files |
+| **Pattern Learning** | ✅ | Knowledge base with working code patterns |
+| **Planning** | ✅ | Step-by-step task planning |
+| **Memory** | ✅ | Learns from past interactions |
+| **QA Review** | ✅ | Code reviewed before approval |
+| **Training** | ✅ | Human feedback improves agents |
+| **Code Execution** | ✅ | Can test code locally |
 
 ## Usage
 
-### Environment Setup
+### Build a Component
 
 ```bash
-# Required environment variables
+# Build a new ECS component
+uv run crew_agents build "Create a QuestComponent for tracking player quests with objectives and rewards"
+
+# Build an entity factory
+uv run crew_agents build "Create a createQuestGiver entity factory that spawns NPCs with dialogue"
+```
+
+### Train the Crew
+
+Training uses human feedback to improve agent quality:
+
+```bash
+# Run 5 training iterations with human feedback
+uv run crew_agents train 5
+
+# Save to custom filename
+uv run crew_agents train 5 -f my_training.pkl
+```
+
+During training:
+1. Agent generates code
+2. You provide feedback on what's wrong/right
+3. Agent improves based on feedback
+4. Feedback is saved for future runs
+
+### List Knowledge Sources
+
+```bash
+uv run crew_agents list-knowledge
+```
+
+### Test Tools
+
+```bash
+uv run crew_agents test-tools
+```
+
+## Configuration
+
+### Environment Variables
+
+```bash
+# Required for LLM access
 export OPENROUTER_API_KEY="your-key-here"
-export MESHY_API_KEY="your-key-here"  # For asset generation
+
+# Optional - for asset generation
+export MESHY_API_KEY="your-key-here"
 ```
 
-### Running Flows
+### LLM Configuration
 
-```bash
-# Run game design (World → Creatures → Gameplay)
-uv run crew_agents design
-
-# Run implementation (ECS → Rendering)
-uv run crew_agents implement
-
-# Run asset generation
-uv run crew_agents assets
-
-# Run everything
-uv run crew_agents full
-```
-
-### Programmatic Usage
-
-```python
-import asyncio
-from crew_agents import GameDesignFlow, ImplementationFlow, AssetGenerationFlow
-
-async def main():
-    # Run design phase
-    design_flow = GameDesignFlow()
-    design_result = await design_flow.kickoff_async()
-    
-    # Run implementation with design outputs
-    impl_flow = ImplementationFlow()
-    impl_flow.state.world_design = design_result.world_design
-    impl_flow.state.creature_design = design_result.creature_design
-    impl_flow.state.gameplay_design = design_result.gameplay_design
-    impl_result = await impl_flow.kickoff_async()
-    
-    # Run asset generation
-    asset_flow = AssetGenerationFlow()
-    asset_flow.state.creature_design = design_result.creature_design
-    asset_result = await asset_flow.kickoff_async()
-
-asyncio.run(main())
-```
-
-## OpenRouter Configuration
-
-All agents use OpenRouter with automatic model selection by default:
+The crew uses OpenRouter with automatic model selection:
 
 ```python
 from crew_agents.config.llm import get_llm
@@ -119,76 +131,94 @@ llm = get_llm("openrouter/auto")
 
 # Or specify a model
 llm = get_llm("openrouter/anthropic/claude-3.5-sonnet")
-llm = get_llm("openrouter/openai/gpt-4o")
-```
-
-## Flow Patterns
-
-### Self-Evaluation Loop
-
-Each design crew output passes through QA validation:
-
-```
-Design → QA Review → [APPROVED] → Next Phase
-              │
-              └────→ [REJECTED] → Retry (max 2x) → Next Phase
-```
-
-### Human-in-the-Loop (HITL)
-
-Asset generation includes human approval gates:
-
-```
-Generate Asset → Automated QA → Create GitHub Issue → Human Approval → Integrate
 ```
 
 ## Directory Structure
 
 ```
-src/crew_agents/
-├── __init__.py           # Package exports
-├── main.py               # CLI entry point
-├── config/
-│   ├── __init__.py
-│   └── llm.py            # OpenRouter LLM configuration
-├── crews/
-│   ├── world_design/
-│   │   ├── world_design_crew.py
-│   │   └── config/
-│   │       ├── agents.yaml
-│   │       └── tasks.yaml
-│   ├── creature_design/
-│   ├── gameplay_design/
-│   ├── ecs_implementation/
-│   ├── rendering/
-│   ├── asset_pipeline/
-│   └── qa_validation/
-├── flows/
-│   ├── game_design_flow.py
-│   ├── implementation_flow.py
-│   └── asset_generation_flow.py
-└── tools/                # Custom tools (future)
+python/crew_agents/
+├── knowledge/                    # Working code patterns
+│   ├── ecs_patterns/
+│   │   └── components.md
+│   ├── rendering_patterns/
+│   │   └── r3f_components.md
+│   └── game_components/
+│       └── architecture.md
+├── src/crew_agents/
+│   ├── crews/
+│   │   └── game_builder/        # Main code-building crew
+│   │       ├── config/
+│   │       │   ├── agents.yaml
+│   │       │   └── tasks.yaml
+│   │       └── game_builder_crew.py
+│   ├── tools/                   # File manipulation tools
+│   │   └── file_tools.py
+│   ├── config/
+│   │   └── llm.py               # OpenRouter configuration
+│   └── main.py                  # CLI entry point
+└── trained_agents_data.pkl      # Training data (after training)
+```
+
+## Allowed Write Directories
+
+For safety, the code writer tool only writes to specific directories:
+
+- `client/src/ecs/components` - ECS component definitions
+- `client/src/ecs/entities` - Entity factory functions
+- `client/src/ecs/systems` - ECS systems
+- `client/src/components` - React Three Fiber components
+- `client/src/lib/stores` - Zustand stores
+- `shared/contracts` - TypeScript contracts
+- `shared/backend/ecs_world` - Backend ECS code
+
+## Adding Knowledge
+
+To add new patterns to the knowledge base:
+
+1. Create a markdown file in the appropriate `knowledge/` subdirectory
+2. Include actual working code examples
+3. Document patterns and conventions
+4. The crew will automatically use it
+
+Example:
+```markdown
+# New Pattern Name
+
+## Description
+What this pattern does...
+
+## Code Example
+\`\`\`typescript
+// Actual working code from the codebase
+export interface MyComponent {
+  ...
+}
+\`\`\`
+
+## Key Patterns
+- Pattern 1
+- Pattern 2
 ```
 
 ## Development
 
+### Running Tests
+
+```bash
+uv run pytest tests/unit/crew_agents/ -v
+```
+
 ### Adding a New Crew
 
 1. Create directory: `src/crew_agents/crews/new_crew/`
-2. Add config files: `config/agents.yaml`, `config/tasks.yaml`
+2. Add config: `config/agents.yaml`, `config/tasks.yaml`
 3. Create crew class with `@CrewBase` decorator
 4. Add to `crews/__init__.py`
-
-### Testing
-
-```bash
-# Run crew agent tests
-uv run pytest tests/ -v
-```
 
 ## See Also
 
 - [CrewAI Documentation](https://docs.crewai.com/)
+- [CrewAI Training](https://docs.crewai.com/en/concepts/training)
+- [CrewAI Planning](https://docs.crewai.com/en/concepts/planning)
+- [CrewAI Coding Agents](https://docs.crewai.com/en/learn/coding-agents)
 - [OpenRouter](https://openrouter.ai/)
-- [Meshy API](https://www.meshy.ai/)
-- Project guidelines: `python/.ruler/AGENTS.md`

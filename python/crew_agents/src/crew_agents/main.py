@@ -1,216 +1,199 @@
 """
-Main entry point for CrewAI flows.
+Main entry point for Rivermarsh CrewAI Game Builder.
 
-Run with:
-    uv run crew_agents design    # Run game design flow
-    uv run crew_agents implement # Run implementation flow
-    uv run crew_agents assets    # Run asset generation flow
-    uv run crew_agents full      # Run complete pipeline
+Usage:
+    uv run crew_agents build "Create a QuestComponent for tracking player quests"
+    uv run crew_agents train 5
+    uv run crew_agents list-knowledge
 """
 
-import asyncio
+import argparse
 import sys
-from typing import Optional
-
-from crew_agents.flows import (
-    AssetGenerationFlow,
-    GameDesignFlow,
-    ImplementationFlow,
-)
+from pathlib import Path
 
 
-async def run_design_flow():
-    """Run the game design flow."""
+def build_component(spec: str) -> None:
+    """Build a game component from a specification."""
+    from crew_agents.crews.game_builder import GameBuilderCrew
+
     print("=" * 60)
-    print("🎮 RIVERMARSH GAME DESIGN FLOW")
+    print("🎮 RIVERMARSH GAME BUILDER")
+    print("=" * 60)
+    print()
+    print(f"Building component: {spec[:100]}...")
+    print()
+
+    crew = GameBuilderCrew()
+    result = crew.crew().kickoff(
+        inputs={
+            "component_spec": spec,
+            "target_directory": "client/src/ecs/components",
+        }
+    )
+
+    print()
+    print("=" * 60)
+    print("📄 RESULT")
+    print("=" * 60)
+    print(result.raw if hasattr(result, "raw") else str(result))
+
+
+def train_crew(n_iterations: int, filename: str = "trained_agents_data.pkl") -> None:
+    """Train the crew with human feedback."""
+    from crew_agents.crews.game_builder import GameBuilderCrew
+
+    print("=" * 60)
+    print("🏋️ TRAINING GAME BUILDER CREW")
+    print("=" * 60)
+    print()
+    print(f"Running {n_iterations} training iterations")
+    print(f"Training data will be saved to: {filename}")
+    print()
+    print("You will be asked to provide feedback on each iteration.")
+    print("This feedback helps the agents improve their code quality.")
+    print()
+
+    crew = GameBuilderCrew()
+
+    # Training inputs - a representative task
+    training_inputs = {
+        "component_spec": """
+        Create a SkillComponent for the player's skill system.
+        
+        Requirements:
+        - Track skill levels (0-100)
+        - Include skills: swimming, climbing, stealth, combat
+        - Support experience gain towards next level
+        - Include cooldowns for active skills
+        """,
+        "target_directory": "client/src/ecs/components",
+    }
+
+    try:
+        crew.crew().train(
+            n_iterations=n_iterations,
+            inputs=training_inputs,
+            filename=filename,
+        )
+        print()
+        print("✅ Training complete!")
+        print(f"Trained data saved to: {filename}")
+        print()
+        print("The crew will now use this training data to improve future code generation.")
+
+    except Exception as e:
+        print(f"❌ Training error: {e}")
+        sys.exit(1)
+
+
+def list_knowledge() -> None:
+    """List available knowledge sources."""
+    knowledge_path = Path(__file__).parent.parent.parent / "knowledge"
+
+    print("=" * 60)
+    print("📚 KNOWLEDGE SOURCES")
     print("=" * 60)
     print()
 
-    flow = GameDesignFlow()
-    result = await flow.kickoff_async()
-
-    print()
-    print("=" * 60)
-    print("📄 DESIGN OUTPUTS")
-    print("=" * 60)
-
-    # Save outputs to files
-    if result.world_design:
-        with open("output/world_design.md", "w") as f:
-            f.write(result.world_design)
-        print("✅ World design saved to output/world_design.md")
-
-    if result.creature_design:
-        with open("output/creature_design.md", "w") as f:
-            f.write(result.creature_design)
-        print("✅ Creature design saved to output/creature_design.md")
-
-    if result.gameplay_design:
-        with open("output/gameplay_design.md", "w") as f:
-            f.write(result.gameplay_design)
-        print("✅ Gameplay design saved to output/gameplay_design.md")
-
-    return result
-
-
-async def run_implementation_flow(design_state: Optional[dict] = None):
-    """Run the implementation flow."""
-    print("=" * 60)
-    print("🏗️ RIVERMARSH IMPLEMENTATION FLOW")
-    print("=" * 60)
-    print()
-
-    flow = ImplementationFlow()
-
-    # Load design state if not provided
-    if design_state:
-        flow.state.world_design = design_state.get("world_design", "")
-        flow.state.creature_design = design_state.get("creature_design", "")
-        flow.state.gameplay_design = design_state.get("gameplay_design", "")
-    else:
-        # Try to load from files
-        try:
-            with open("output/world_design.md", "r") as f:
-                flow.state.world_design = f.read()
-            with open("output/creature_design.md", "r") as f:
-                flow.state.creature_design = f.read()
-            with open("output/gameplay_design.md", "r") as f:
-                flow.state.gameplay_design = f.read()
-            print("📂 Loaded design documents from output/")
-        except FileNotFoundError:
-            print("⚠️ No design documents found. Run 'design' flow first.")
-            return None
-
-    result = await flow.kickoff_async()
-
-    # Save outputs
-    if result.ecs_components:
-        with open("output/ecs_components.ts", "w") as f:
-            f.write(result.ecs_components)
-        print("✅ ECS components saved to output/ecs_components.ts")
-
-    if result.ecs_systems:
-        with open("output/ecs_systems.ts", "w") as f:
-            f.write(result.ecs_systems)
-        print("✅ ECS systems saved to output/ecs_systems.ts")
-
-    if result.rendering_code:
-        with open("output/rendering.tsx", "w") as f:
-            f.write(result.rendering_code)
-        print("✅ Rendering code saved to output/rendering.tsx")
-
-    return result
-
-
-async def run_asset_flow(design_state: Optional[dict] = None, species: str = None):
-    """Run the asset generation flow."""
-    print("=" * 60)
-    print("🎨 RIVERMARSH ASSET GENERATION FLOW")
-    print("=" * 60)
-    print()
-
-    flow = AssetGenerationFlow()
-
-    # Load design state
-    if design_state:
-        flow.state.creature_design = design_state.get("creature_design", "")
-        flow.state.world_design = design_state.get("world_design", "")
-    else:
-        try:
-            with open("output/creature_design.md", "r") as f:
-                flow.state.creature_design = f.read()
-            with open("output/world_design.md", "r") as f:
-                flow.state.world_design = f.read()
-            print("📂 Loaded design documents from output/")
-        except FileNotFoundError:
-            print("⚠️ No design documents found. Run 'design' flow first.")
-            return None
-
-    result = await flow.kickoff_async()
-    return result
-
-
-async def run_full_pipeline():
-    """Run the complete pipeline: design → implement → assets."""
-    print("=" * 60)
-    print("🚀 RIVERMARSH FULL DEVELOPMENT PIPELINE")
-    print("=" * 60)
-    print()
-
-    # Phase 1: Design
-    print("\n📐 PHASE 1: DESIGN\n")
-    design_result = await run_design_flow()
-
-    if not design_result:
-        print("❌ Design phase failed")
+    if not knowledge_path.exists():
+        print("No knowledge directory found")
         return
 
-    design_state = {
-        "world_design": design_result.world_design,
-        "creature_design": design_result.creature_design,
-        "gameplay_design": design_result.gameplay_design,
-    }
+    for category in sorted(knowledge_path.iterdir()):
+        if category.is_dir() and not category.name.startswith("."):
+            print(f"📁 {category.name}/")
+            for file in sorted(category.iterdir()):
+                if file.suffix == ".md":
+                    # Get first line as description
+                    with open(file, "r") as f:
+                        first_line = f.readline().strip().replace("#", "").strip()
+                    print(f"   📄 {file.name}")
+                    print(f"      {first_line[:60]}...")
 
-    # Phase 2: Implementation
-    print("\n🏗️ PHASE 2: IMPLEMENTATION\n")
-    impl_result = await run_implementation_flow(design_state)
 
-    # Phase 3: Assets
-    print("\n🎨 PHASE 3: ASSETS\n")
-    asset_result = await run_asset_flow(design_state)
+def test_tools() -> None:
+    """Test that the file tools work correctly."""
+    from crew_agents.tools.file_tools import (
+        DirectoryListTool,
+        GameCodeReaderTool,
+        get_workspace_root,
+    )
 
+    print("=" * 60)
+    print("🔧 TESTING TOOLS")
+    print("=" * 60)
     print()
-    print("=" * 60)
-    print("✅ PIPELINE COMPLETE")
-    print("=" * 60)
 
-    return {
-        "design": design_result,
-        "implementation": impl_result,
-        "assets": asset_result,
-    }
+    workspace = get_workspace_root()
+    print(f"Workspace root: {workspace}")
+    print()
+
+    # Test directory listing
+    dir_tool = DirectoryListTool()
+    result = dir_tool._run("client/src/ecs/components")
+    print("Directory listing:")
+    print(result)
+    print()
+
+    # Test file reading
+    read_tool = GameCodeReaderTool()
+    result = read_tool._run("client/src/ecs/components.ts")
+    print("File reading (first 500 chars):")
+    print(result[:500] + "..." if len(result) > 500 else result)
 
 
 def main():
     """CLI entry point."""
-    import os
-
-    # Ensure output directory exists
-    os.makedirs("output", exist_ok=True)
-
-    command = sys.argv[1] if len(sys.argv) > 1 else "help"
-
-    if command == "design":
-        asyncio.run(run_design_flow())
-    elif command == "implement":
-        asyncio.run(run_implementation_flow())
-    elif command == "assets":
-        species = sys.argv[2] if len(sys.argv) > 2 else None
-        asyncio.run(run_asset_flow(species=species))
-    elif command == "full":
-        asyncio.run(run_full_pipeline())
-    else:
-        print("""
-Rivermarsh CrewAI Development Pipeline
-
-Usage:
-    uv run crew_agents <command>
-
-Commands:
-    design      Run game design flow (World → Creatures → Gameplay)
-    implement   Run implementation flow (ECS → Rendering)
-    assets      Run asset generation flow (Meshy 3D models)
-    full        Run complete pipeline
-
-Environment:
-    OPENROUTER_API_KEY  Required for LLM access
-    MESHY_API_KEY       Required for asset generation
-
+    parser = argparse.ArgumentParser(
+        description="Rivermarsh CrewAI Game Builder",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
 Examples:
-    uv run crew_agents design
-    uv run crew_agents assets otter
-    uv run crew_agents full
-        """)
+    # Build a new ECS component
+    uv run crew_agents build "Create a QuestComponent for tracking player quests"
+    
+    # Train the crew with human feedback (5 iterations)
+    uv run crew_agents train 5
+    
+    # List available knowledge sources
+    uv run crew_agents list-knowledge
+    
+    # Test that file tools work
+    uv run crew_agents test-tools
+        """,
+    )
+
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # Build command
+    build_parser = subparsers.add_parser("build", help="Build a game component")
+    build_parser.add_argument("spec", help="Component specification")
+
+    # Train command
+    train_parser = subparsers.add_parser("train", help="Train the crew with feedback")
+    train_parser.add_argument("iterations", type=int, help="Number of training iterations")
+    train_parser.add_argument(
+        "-f", "--filename", default="trained_agents_data.pkl", help="Output filename"
+    )
+
+    # List knowledge command
+    subparsers.add_parser("list-knowledge", help="List knowledge sources")
+
+    # Test tools command
+    subparsers.add_parser("test-tools", help="Test file tools")
+
+    args = parser.parse_args()
+
+    if args.command == "build":
+        build_component(args.spec)
+    elif args.command == "train":
+        train_crew(args.iterations, args.filename)
+    elif args.command == "list-knowledge":
+        list_knowledge()
+    elif args.command == "test-tools":
+        test_tools()
+    else:
+        parser.print_help()
 
 
 if __name__ == "__main__":
