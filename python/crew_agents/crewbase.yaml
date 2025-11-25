@@ -688,7 +688,13 @@ tasks:
   # ==============================================================================
 
   # TDD Prototype Workflow - Standard 4-phase pattern for any prototype
-  # Individual phase anchors for reuse (YAML aliases can't use dot notation)
+  #
+  # NOTE: Separate anchors are needed for each workflow phase because YAML does not support
+  # referencing subfields of an alias (e.g., *anchor.subfield). This means we cannot define
+  # a single anchor for the whole workflow and then reference only a phase within it.
+  # Instead, each phase is anchored individually for reuse.
+  # See: https://yaml.org/spec/1.2.2/#id2760395
+  #
   x-tdd-design-phase: &tdd_design_phase
     agent: rendering_engineer
     context_required: true
