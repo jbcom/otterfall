@@ -17,9 +17,9 @@ on:
   workflow_dispatch:
 
 env:
-  PYTHON_VERSION: '3.13'
+  PYTHON_VERSION: '3.11'
   NODE_VERSION: '20'
-  UV_VERSION: '0.4.0'
+  UV_VERSION: '0.5.14'
 
 jobs:
   # TypeScript and Frontend checks
@@ -42,7 +42,9 @@ jobs:
 
       - name: Get pnpm store directory
         shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        run: |
+          STORE=$(pnpm store path --silent 2>/dev/null || echo "$HOME/.local/share/pnpm/store")
+          echo "STORE_PATH=$STORE" >> $GITHUB_ENV
 
       - name: Setup pnpm cache
         uses: actions/cache@v4
@@ -51,6 +53,7 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
+        continue-on-error: true  # Don't fail if cache fails
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
