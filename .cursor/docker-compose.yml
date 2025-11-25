@@ -1,0 +1,134 @@
+version: '3.8'
+
+services:
+  # Main development environment (Node.js + Python)
+  dev:
+    build:
+      context: ..
+      dockerfile: .cursor/Dockerfile
+    container_name: rivermarsh-dev
+    volumes:
+      - ..:/workspace
+      - node_modules:/workspace/node_modules
+      - python_venv:/workspace/python/.venv
+      - android_gradle:/workspace/android/.gradle
+      - android_build:/workspace/android/build
+    ports:
+      - "5173:5173"  # Vite dev server
+      - "4173:4173"  # Vite preview
+      - "9323:9323"  # Playwright UI
+      - "6379:6379"  # Redis
+    environment:
+      - NODE_ENV=development
+      - FORCE_COLOR=1
+      - CHOKIDAR_USEPOLLING=true
+      # Python/CrewAI
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+
+  # CrewAI agent runner
+  crewai:
+    build:
+      context: ..
+      dockerfile: .cursor/Dockerfile
+    container_name: rivermarsh-crewai
+    volumes:
+      - ..:/workspace
+      - python_venv:/workspace/python/.venv
+    environment:
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - MESHY_API_KEY=${MESHY_API_KEY}
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+    profiles:
+      - crewai
+    working_dir: /workspace/python/crew_agents
+    command: uv run crew_agents design
+
+  # Build environment (CI-like)
+  build:
+    build:
+      context: ..
+      dockerfile: .cursor/Dockerfile
+    container_name: rivermarsh-build
+    volumes:
+      - ..:/workspace
+      - build_cache:/root/.npm
+    environment:
+      - NODE_ENV=production
+      - CI=true
+    profiles:
+      - build
+    command: pnpm run build
+
+  # Android build environment
+  android:
+    build:
+      context: ..
+      dockerfile: .cursor/Dockerfile
+    container_name: rivermarsh-android
+    volumes:
+      - ..:/workspace
+      - android_gradle:/workspace/android/.gradle
+      - android_build:/workspace/android/build
+      - gradle_cache:/root/.gradle
+    environment:
+      - ANDROID_SDK_ROOT=/opt/android-sdk
+      - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+    profiles:
+      - android
+    command: /bin/bash
+
+  # Testing environment (Playwright + Vitest)
+  test:
+    build:
+      context: ..
+      dockerfile: .cursor/Dockerfile
+    container_name: rivermarsh-test
+    volumes:
+      - ..:/workspace
+      - node_modules:/workspace/node_modules
+      - python_venv:/workspace/python/.venv
+    environment:
+      - CI=true
+    profiles:
+      - test
+    command: pnpm test
+
+  # Python tests
+  pytest:
+    build:
+      context: ..
+      dockerfile: .cursor/Dockerfile
+    container_name: rivermarsh-pytest
+    volumes:
+      - ..:/workspace
+      - python_venv:/workspace/python/.venv
+    environment:
+      - CI=true
+      - PYTHONDONTWRITEBYTECODE=1
+    profiles:
+      - test
+    working_dir: /workspace/python
+    command: uv run pytest
+
+volumes:
+  node_modules:
+    driver: local
+  python_venv:
+    driver: local
+  android_gradle:
+    driver: local
+  android_build:
+    driver: local
+  gradle_cache:
+    driver: local
+  build_cache:
+    driver: local
+
+networks:
+  default:
+    name: rivermarsh-network
