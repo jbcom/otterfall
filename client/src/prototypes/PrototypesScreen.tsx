@@ -11,7 +11,7 @@ import {
   CircularProgress,
   Button,
 } from '@mui/material';
-import { HITLReviewControls } from '../components/HITLReviewControls';
+import { HITLReviewControls, HITLReviewData } from '../components/HITLReviewControls';
 import {
   DndContext,
   closestCenter,
@@ -121,7 +121,9 @@ export function PrototypesScreen() {
 
     setSelectedPrototype(id);
     const module = await prototype.load();
-    setPrototypeComponent(() => module.default);
+    // Cast to the expected component type
+    const Component = module.default as React.ComponentType<{ onExit: () => void }>;
+    setPrototypeComponent(() => Component);
   };
 
   const handleExitPrototype = () => {
@@ -145,7 +147,7 @@ export function PrototypesScreen() {
         {/* HITL Review Controls - Always present under prototypes */}
         <Box sx={{ flexShrink: 0 }}>
           <HITLReviewControls
-            onSubmit={(reviewData) => {
+            onSubmit={(reviewData: HITLReviewData) => {
               console.log('[HITL Review]', {
                 prototype: selectedPrototype,
                 ...reviewData,

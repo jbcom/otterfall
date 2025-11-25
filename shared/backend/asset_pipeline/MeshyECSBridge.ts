@@ -4,8 +4,8 @@
  * Converts ECS species definitions → Meshy API calls → ECS-ready assets
  */
 
-import type { PredatorSpecies, PreySpecies } from '../../client/src/ecs/data/predatorSpecies';
-import type { AnimationComponent } from '../../client/src/ecs/components/AnimationComponent';
+import type { PredatorSpecies, PreySpecies } from '../../../client/src/ecs/data/predatorSpecies';
+import type { AnimationComponent } from '../../../client/src/ecs/components/AnimationComponent';
 
 export interface MeshyAssetManifest {
   species: string;

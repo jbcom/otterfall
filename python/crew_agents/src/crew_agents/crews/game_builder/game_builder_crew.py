@@ -129,12 +129,16 @@ class GameBuilderCrew:
     def crew(self) -> Crew:
         """Creates the Game Builder Crew with planning and memory."""
         knowledge_sources = load_knowledge_sources()
+        
+        # Get LLM for planning (must use OpenRouter, not OpenAI)
+        planner_llm = get_llm()
 
         return Crew(
             agents=self.agents,
             tasks=self.tasks,
             process=Process.sequential,
             planning=True,  # Enable step-by-step planning
+            planning_llm=planner_llm,  # Use OpenRouter for planning
             memory=True,  # Enable memory for learning
             knowledge_sources=knowledge_sources if knowledge_sources else None,
             verbose=True,
