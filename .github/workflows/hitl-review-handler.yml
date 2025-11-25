@@ -61,14 +61,12 @@ jobs:
             console.log(`Parsed: command=${command}, args=${args}`);
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Setup Python with uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: '0.4.0'
+        uses: astral-sh/setup-uv@v7
 
       - name: Install Python
         run: uv python install 3.11

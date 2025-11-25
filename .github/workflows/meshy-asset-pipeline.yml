@@ -43,7 +43,6 @@ on:
 
 env:
   PYTHON_VERSION: '3.11'
-  UV_VERSION: '0.4.0'
   MODELS_PATH: 'client/public/models'
 
 jobs:
@@ -57,12 +56,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python with uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: ${{ env.UV_VERSION }}
+        uses: astral-sh/setup-uv@v7
 
       - name: Install Python
         run: uv python install ${{ env.PYTHON_VERSION }}
@@ -126,12 +123,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python with uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: ${{ env.UV_VERSION }}
+        uses: astral-sh/setup-uv@v7
 
       - name: Install Python and dependencies
         run: |
@@ -229,12 +224,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python with uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: ${{ env.UV_VERSION }}
+        uses: astral-sh/setup-uv@v7
 
       - name: Install dependencies
         run: |
@@ -302,12 +295,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python with uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: ${{ env.UV_VERSION }}
+        uses: astral-sh/setup-uv@v7
 
       - name: Install dependencies
         run: |

@@ -33,10 +33,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -71,10 +71,10 @@ jobs:
         working-directory: python/mesh_toolkit
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: "python/**/pyproject.toml"
@@ -93,7 +93,7 @@ jobs:
             --junitxml=../../test-results/mesh-toolkit-unit.xml
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: mesh-toolkit-test-results
@@ -110,10 +110,10 @@ jobs:
         working-directory: python/crew_agents
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: "python/**/pyproject.toml"
@@ -132,7 +132,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: crew-agents-test-results
@@ -150,16 +150,16 @@ jobs:
         working-directory: python/mesh_toolkit
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Chrome
-        uses: browser-actions/setup-chrome@v1
+        uses: browser-actions/setup-chrome@v2
         with:
           chrome-version: stable
         id: setup-chrome
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           cache-dependency-glob: "python/**/pyproject.toml"
@@ -183,7 +183,7 @@ jobs:
             --junitxml=../../test-results/integration.xml
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: integration-test-results
@@ -197,10 +197,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - name: Ruff check
         working-directory: python
@@ -220,13 +220,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Validate workflows
         uses: docker://rhysd/actionlint:latest
         with:
           args: -color
-        continue-on-error: true  # Info-level shellcheck warnings
+        continue-on-error: true
 
   # =============================================================================
   # Android Build (Capacitor)
@@ -237,20 +237,20 @@ jobs:
     if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'build-android')
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: true
+
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -258,12 +258,9 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install dependencies
-        run: pnpm install
-
       - name: Build web assets
         run: pnpm run build
-        continue-on-error: true  # May fail due to TS errors
+        continue-on-error: true
 
       # Uncomment when Capacitor is configured
       # - name: Sync Capacitor
