@@ -62,10 +62,10 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | \
     bash -s -- --to /usr/local/bin
 
 # Process-compose - Multi-process orchestration (required for CrewAI workflows)
-RUN curl -L https://github.com/F1bonacc1/process-compose/releases/download/v1.51.1/process-compose_linux_amd64.tar.gz | \
+RUN curl -L https://github.com/F1bonacc1/process-compose/releases/download/v1.78.0/process-compose_linux_amd64.tar.gz | \
     tar xz -C /usr/local/bin process-compose && \
     chmod +x /usr/local/bin/process-compose && \
-    process-compose --version
+    process-compose version
 
 # GitHub CLI - CI/CD integration
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
