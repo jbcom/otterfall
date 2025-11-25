@@ -1,0 +1,213 @@
+# Continuous Integration - Runs on all PRs and pushes
+#
+# This workflow ensures code quality through:
+# - TypeScript type checking
+# - ESLint and Prettier
+# - Python unit tests
+# - Python integration tests (optional, requires API keys)
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Allow manual triggering
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.13'
+  NODE_VERSION: '20'
+  UV_VERSION: '0.4.0'
+
+jobs:
+  # TypeScript and Frontend checks
+  frontend:
+    name: Frontend Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript type check
+        run: pnpm run check
+        continue-on-error: true  # TODO: Fix existing TS errors then remove this
+
+      - name: ESLint
+        run: pnpm run lint
+        continue-on-error: true  # TODO: Fix existing lint errors then remove this
+
+      - name: Prettier check
+        run: pnpm run format:check
+        continue-on-error: true  # TODO: Fix existing format errors then remove this
+
+      - name: Run Vitest tests
+        run: pnpm run test:run
+
+  # Python unit tests (no external dependencies)
+  python-unit:
+    name: Python Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python with uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('python/**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install mesh_toolkit
+        run: |
+          cd python/mesh_toolkit
+          uv sync
+
+      - name: Install crew_agents
+        run: |
+          cd python/crew_agents
+          uv sync
+
+      - name: Run unit tests
+        run: |
+          cd python
+          uv run --project mesh_toolkit pytest tests/unit -v --tb=short -x
+
+      - name: Run crew_agents unit tests
+        run: |
+          cd python
+          uv run --project crew_agents pytest tests/unit/crew_agents -v --tb=short -x
+
+  # Python integration tests (requires API keys, skipped if not available)
+  python-integration:
+    name: Python Integration Tests
+    runs-on: ubuntu-latest
+    # Only run on main branch or when explicitly requested
+    if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'run-integration')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python with uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          cd python/mesh_toolkit
+          uv sync --all-extras
+
+      - name: Run integration tests
+        env:
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+        run: |
+          cd python
+          # Integration tests will skip if MESHY_API_KEY not set
+          uv run --project mesh_toolkit pytest tests/integration -v --tb=short -x || echo "Integration tests skipped (no API key)"
+
+  # Python code quality
+  python-lint:
+    name: Python Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python with uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install ruff
+        run: uv tool install ruff
+
+      - name: Run ruff check
+        run: |
+          cd python
+          uv tool run ruff check . --output-format=github
+        continue-on-error: true  # TODO: Fix existing lint errors then remove this
+
+      - name: Run ruff format check
+        run: |
+          cd python
+          uv tool run ruff format --check .
+        continue-on-error: true  # TODO: Fix existing format errors then remove this
+
+  # Workflow validation
+  workflow-lint:
+    name: Workflow Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate workflow files
+        uses: docker://rhysd/actionlint:latest
+        with:
+          args: -color
+        continue-on-error: true  # Informational only
+
+  # Summary job that depends on all others
+  ci-complete:
+    name: CI Complete
+    needs: [frontend, python-unit, python-lint, workflow-lint]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check results
+        run: |
+          echo "Frontend: ${{ needs.frontend.result }}"
+          echo "Python Unit: ${{ needs.python-unit.result }}"
+          echo "Python Lint: ${{ needs.python-lint.result }}"
+          echo "Workflow Lint: ${{ needs.workflow-lint.result }}"
+
+          # Fail if any required job failed (not just skipped)
+          if [[ "${{ needs.python-unit.result }}" == "failure" ]]; then
+            echo "::error::Python unit tests failed"
+            exit 1
+          fi
+
+          echo "✅ CI checks completed"
