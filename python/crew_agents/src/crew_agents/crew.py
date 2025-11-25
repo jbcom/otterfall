@@ -126,8 +126,9 @@ def kickoff(inputs: dict = None):
     crew = Crew.from_yaml(str(Path(__file__).parent.parent.parent / "crewbase.yaml"))
     
     # If specific task requested, filter to that task
+    # Use pop() to remove task key so it's not passed to crew.kickoff()
     if inputs and "task" in inputs:
-        task_name = inputs["task"]
+        task_name = inputs.pop("task")
         crew.tasks = [t for t in crew.tasks if t.name == task_name]
         if not crew.tasks:
             raise ValueError(f"Task '{task_name}' not found in crewbase.yaml")
