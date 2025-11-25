@@ -26,13 +26,13 @@ mcp_servers:
     command: "npx"
     args: ["-y", "@modelcontextprotocol/server-filesystem", "./"]
 
-  vite:
-    command: "npx"
-    args: ["-y", "@modelcontextprotocol/server-vite"]
-
   playwright:
     command: "npx"
-    args: ["-y", "@modelcontextprotocol/server-playwright"]
+    args: ["-y", "@playwright/mcp"]
+
+  context7:
+    command: "npx"
+    args: ["-y", "@upstash/context7-mcp"]
 
 # ==============================================================================
 # REUSABLE WORKFLOW PATTERNS

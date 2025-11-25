@@ -11,27 +11,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     pkg-config \
     # Version control
-    git \
     git-lfs \
-    # Playwright/Chromium dependencies (headless browser testing)
-    chromium \
-    chromium-driver \
-    libgbm1 \
-    libasound2 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libglib2.0-0 \
-    libgtk-3-0 \
-    libnspr4 \
-    libnss3 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxkbcommon0 \
-    libxrandr2 \
-    fonts-liberation \
+    # GitHub CLI (Debian native package)
+    gh \
+    # Task automation (Debian native package)
+    just \
     && rm -rf /var/lib/apt/lists/*
 
 # =============================================================================
@@ -55,41 +39,18 @@ RUN corepack enable && \
 # =============================================================================
 # DEVELOPER TOOLS
 # =============================================================================
-# Install tools in a single layer to reduce image size
-
-# Just command runner - Task automation
-RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | \
-    bash -s -- --to /usr/local/bin
-
 # Process-compose - Multi-process orchestration (required for CrewAI workflows)
-RUN curl -L https://github.com/F1bonacc1/process-compose/releases/download/v1.51.1/process-compose_linux_amd64.tar.gz | \
-    tar xz -C /usr/local/bin process-compose && \
-    chmod +x /usr/local/bin/process-compose && \
-    process-compose --version
-
-# GitHub CLI - CI/CD integration
-RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
-    dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg && \
-    chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && \
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | \
-    tee /etc/apt/sources.list.d/github-cli.list > /dev/null && \
-    apt-get update && \
-    apt-get install -y gh && \
-    rm -rf /var/lib/apt/lists/*
+# Using official installation script
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/F1bonacc1/process-compose/main/scripts/get-pc.sh)" -- -b /usr/local/bin && \
+    process-compose version
 
 # =============================================================================
 # PLAYWRIGHT BROWSER CACHE
 # =============================================================================
 # Pre-install Playwright dependencies and Chromium browser
-# This reduces startup time for tests and matches CI workflow
+# Playwright bundles its own Chromium (not using system package)
+# This is required for CrewAI agents using @modelcontextprotocol/server-playwright
 RUN pnpm dlx playwright install-deps chromium && \
     pnpm dlx playwright install chromium
-
-# =============================================================================
-# ENVIRONMENT VARIABLES
-# =============================================================================
-# Selenium/WebDriver paths (for integration tests)
-ENV CHROME_BIN=/usr/bin/chromium
-ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
 
 WORKDIR /workspace
