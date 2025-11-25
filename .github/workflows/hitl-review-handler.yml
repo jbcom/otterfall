@@ -83,11 +83,12 @@ jobs:
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
         run: |
           cd python/crew_agents
 
-          # Extract species from issue title
-          SPECIES=$(echo "${{ github.event.issue.title }}" | grep -oP '(?<=: )\w+' || echo "unknown")
+          # Extract species from issue title (passed via env to prevent injection)
+          SPECIES=$(echo "$ISSUE_TITLE" | grep -oP '(?<=: )\w+' || echo "unknown")
 
           echo "Approving assets for: $SPECIES"
 
@@ -125,12 +126,14 @@ jobs:
         if: steps.parse.outputs.command == 'regenerate' || steps.parse.outputs.command == 'tweak'
         env:
           MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          FLOW_ARGS: ${{ steps.parse.outputs.args }}
         run: |
           cd python/crew_agents
 
-          # Extract species from issue title (same pattern as approval step)
-          SPECIES=$(echo "${{ github.event.issue.title }}" | grep -oP '(?<=: )\w+' || echo "unknown")
-          ADJUSTMENTS='${{ steps.parse.outputs.args }}'
+          # Extract species from issue title (passed via env to prevent injection)
+          SPECIES=$(echo "$ISSUE_TITLE" | grep -oP '(?<=: )\w+' || echo "unknown")
+          ADJUSTMENTS="$FLOW_ARGS"
 
           echo "Regenerating $SPECIES with adjustments: $ADJUSTMENTS"
 
