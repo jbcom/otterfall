@@ -85,6 +85,13 @@ ENV PATH="/root/.local/bin:$PATH"
 # Install just command runner
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
+# Install process-compose (multi-process orchestration)
+RUN curl -L -o /tmp/process-compose.tar.gz \
+    "https://github.com/F1bonacc1/process-compose/releases/download/v1.51.1/process-compose_linux_amd64.tar.gz" \
+    && tar -xzf /tmp/process-compose.tar.gz -C /usr/local/bin process-compose \
+    && chmod +x /usr/local/bin/process-compose \
+    && rm /tmp/process-compose.tar.gz
+
 # Install GitHub CLI
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
     && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
