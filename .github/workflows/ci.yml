@@ -25,7 +25,7 @@ env:
 
 jobs:
   # =============================================================================
-  # Frontend Checks (Node.js/TypeScript/React)
+  # Frontend (Node.js/TypeScript/React)
   # =============================================================================
   frontend:
     name: Frontend
@@ -62,20 +62,23 @@ jobs:
         run: pnpm run format:check
         continue-on-error: true  # TODO: Fix existing errors
 
-      - name: Unit tests
+      - name: Unit tests (Vitest)
         run: pnpm run test:run
 
   # =============================================================================
-  # Python Unit Tests
+  # Python Unit Tests (mesh_toolkit)
   # =============================================================================
-  python-test:
-    name: Python Tests
+  python-mesh-toolkit:
+    name: Python mesh_toolkit
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: python/mesh_toolkit
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # uv best practice: use setup-uv with caching
+      # uv best practice: latest version with caching
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
@@ -85,28 +88,32 @@ jobs:
       - name: Set up Python
         run: uv python install ${{ env.PYTHON_VERSION }}
 
-      # Install and test mesh_toolkit
-      - name: Test mesh_toolkit
-        working-directory: python/mesh_toolkit
-        run: |
-          uv sync --group test
-          uv run pytest ../tests/unit -v --tb=short --ignore=../tests/unit/crew_agents
+      - name: Install dependencies
+        run: uv sync --group test
 
-      # Install and test crew_agents (may have complex deps)
-      - name: Test crew_agents
-        working-directory: python/crew_agents
+      - name: Run unit tests
         run: |
-          uv sync
-          uv run pytest ../tests/unit/crew_agents -v --tb=short
-        continue-on-error: true
+          uv run pytest ../tests/unit \
+            --ignore=../tests/unit/crew_agents \
+            -v --tb=short \
+            --junitxml=../../test-results/mesh-toolkit-unit.xml
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mesh-toolkit-test-results
+          path: test-results/
 
   # =============================================================================
-  # Python Integration Tests (with Playwright)
+  # Python Unit Tests (crew_agents)
   # =============================================================================
-  python-integration:
-    name: Python Integration
+  python-crew-agents:
+    name: Python crew_agents
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'run-integration')
+    defaults:
+      run:
+        working-directory: python/crew_agents
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -121,13 +128,52 @@ jobs:
         run: uv python install ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
+        run: uv sync
+
+      - name: Run unit tests
+        run: |
+          uv run pytest ../tests/unit/crew_agents \
+            -v --tb=short \
+            --junitxml=../../test-results/crew-agents-unit.xml
+        continue-on-error: true  # CrewAI deps can be complex
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: crew-agents-test-results
+          path: test-results/
+
+  # =============================================================================
+  # Python Integration Tests (requires secrets)
+  # =============================================================================
+  python-integration:
+    name: Python Integration
+    runs-on: ubuntu-latest
+    # Only run on main or with label
+    if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'run-integration')
+    defaults:
+      run:
         working-directory: python/mesh_toolkit
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "python/**/pyproject.toml"
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies with test extras
         run: uv sync --all-extras
 
       # Playwright best practice: cache browser binaries
       - name: Get Playwright version
         id: playwright-version
-        working-directory: python/mesh_toolkit
         run: |
           PLAYWRIGHT_VERSION=$(uv run python -c "import playwright; print(playwright.__version__)")
           echo "version=$PLAYWRIGHT_VERSION" >> $GITHUB_OUTPUT
@@ -139,25 +185,31 @@ jobs:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
 
-      # Playwright best practice: install with system deps
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        working-directory: python/mesh_toolkit
-        run: uv run playwright install --with-deps
+        run: uv run playwright install --with-deps chromium
 
-      - name: Install Playwright system deps only
+      - name: Install Playwright deps only
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        working-directory: python/mesh_toolkit
-        run: uv run playwright install-deps
+        run: uv run playwright install-deps chromium
 
       - name: Run integration tests
-        working-directory: python/mesh_toolkit
         env:
           MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
-        run: uv run pytest ../tests/integration -v --tb=short
+        run: |
+          uv run pytest ../tests/integration \
+            -v --tb=short \
+            --junitxml=../../test-results/integration.xml
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: test-results/
 
   # =============================================================================
-  # Python Lint
+  # Python Lint (ruff)
   # =============================================================================
   python-lint:
     name: Python Lint
@@ -195,30 +247,46 @@ jobs:
           args: -color
 
   # =============================================================================
-  # CI Status
+  # CI Status Summary
   # =============================================================================
   ci-status:
     name: CI Status
-    needs: [frontend, python-test, python-lint, workflow-lint]
+    needs: [frontend, python-mesh-toolkit, python-crew-agents, python-lint, workflow-lint]
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Check status
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          path: all-test-results
+        continue-on-error: true
+
+      - name: Summary
         run: |
           echo "## CI Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Frontend | ${{ needs.frontend.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Python Tests | ${{ needs.python-test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| mesh_toolkit | ${{ needs.python-mesh-toolkit.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| crew_agents | ${{ needs.python-crew-agents.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Python Lint | ${{ needs.python-lint.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Workflow Lint | ${{ needs.workflow-lint.result }} |" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "${{ needs.frontend.result }}" == "failure" ]] || \
-             [[ "${{ needs.python-test.result }}" == "failure" ]]; then
-            echo ""
-            echo "::error::Required checks failed"
+          # Check required jobs
+          FAILED=false
+          if [[ "${{ needs.frontend.result }}" == "failure" ]]; then
+            echo "::error::Frontend checks failed"
+            FAILED=true
+          fi
+          if [[ "${{ needs.python-mesh-toolkit.result }}" == "failure" ]]; then
+            echo "::error::mesh_toolkit tests failed"
+            FAILED=true
+          fi
+
+          if [[ "$FAILED" == "true" ]]; then
             exit 1
           fi
 
-          echo ""
-          echo "✅ All required checks passed"
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All required checks passed" >> $GITHUB_STEP_SUMMARY
