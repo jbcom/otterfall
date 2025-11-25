@@ -40,10 +40,8 @@ RUN corepack enable && \
 # DEVELOPER TOOLS
 # =============================================================================
 # Process-compose - Multi-process orchestration (required for CrewAI workflows)
-# Not available in Debian repos, must install manually
-RUN curl -L https://github.com/F1bonacc1/process-compose/releases/download/v1.78.0/process-compose_linux_amd64.tar.gz | \
-    tar xz -C /usr/local/bin process-compose && \
-    chmod +x /usr/local/bin/process-compose && \
+# Using official installation script
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/F1bonacc1/process-compose/main/scripts/get-pc.sh)" -- -b /usr/local/bin && \
     process-compose version
 
 # =============================================================================
