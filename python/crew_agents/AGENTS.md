@@ -3,31 +3,150 @@
 
 <!-- Source: .ruler/workflow_configuration.md -->
 
-# CrewAI Workflow Configuration
+# CrewAI Workflow Configuration (v2.0)
 
-## Agent Hierarchy
+## Architecture Overview
 
-**Technical Director** (Manager)
-- Delegates to specialist agents
-- Max 40 iterations, 5 reasoning attempts
+The crew system is organized into three phases with QA gates:
 
-**Specialists** (Workers)
-- ECS Architect, Yuka AI Engineer, Rendering Engineer, etc.
-- Max 25-30 iterations, 3 reasoning attempts
-- No delegation
+```
+DESIGN → IMPLEMENTATION → ASSET GENERATION
+  ↓           ↓              ↓
+ QA          QA             QA + HITL
+```
 
-## MCP Tool Access
+## Crews and Agents
 
-Agents have filtered access to MCP servers based on role:
-- **All agents**: Git, Filesystem, Knowledge
-- **Chief Architect**: Context7 (doc fetching)
-- **Rendering Engineer**: Vite dev server
-- **QA Tester**: Playwright, testing tools
+### Design Phase Crews
+
+**WorldDesignCrew**
+- World Architect: High-level world structure
+- Biome Designer: Individual biome specifications
+- Ecosystem Specialist: Ecological relationships
+
+**CreatureDesignCrew**
+- Creature Designer: Species concepts and stats
+- Behavior Specialist: AI patterns (Yuka.js)
+- Stats Balancer: Numerical balance
+
+**GameplayDesignCrew**
+- Systems Designer: Core gameplay loops
+- Combat Designer: Combat mechanics
+- Economy Designer: Resources and progression
+
+### Implementation Phase Crews
+
+**ECSImplementationCrew**
+- ECS Architect: Component schema design
+- TypeScript Engineer: Type-safe implementation
+- Systems Engineer: System logic
+
+**RenderingCrew**
+- Shader Engineer: GLSL for water/terrain
+- R3F Specialist: React Three Fiber scenes
+- Performance Engineer: Mobile optimization
+
+### Operations Crews
+
+**AssetPipelineCrew**
+- Asset Director: Overall asset strategy
+- Prompt Engineer: Meshy prompt optimization
+- Asset QA: Quality assessment
+
+**QAValidationCrew**
+- Design Reviewer: Document quality
+- Code Reviewer: TypeScript correctness
+- Integration Tester: End-to-end validation
+
+## LLM Configuration
+
+All agents use OpenRouter with automatic model selection:
+
+```python
+from crew_agents.config.llm import get_llm
+
+# Default - auto-selects best model per task
+llm = get_llm("openrouter/auto")
+```
+
+Environment variable: `OPENROUTER_API_KEY`
+
+## Flow Patterns
+
+### Self-Evaluation Loop
+
+```python
+@router(review_step)
+def check_approval(self):
+    if "APPROVED" in self.state.review.upper():
+        return "next_phase"
+    elif self.state.retry_count < self.state.max_retries:
+        return "retry"
+    else:
+        return "next_phase"  # Proceed with warning
+```
+
+### Human-in-the-Loop (HITL)
+
+Asset generation includes human approval via GitHub Issues:
+
+```python
+@listen("human_approval_gate")
+def create_hitl_issue(self):
+    # Creates GitHub issue for human review
+    # Actual approval happens via webhook callback
+    return {"status": "awaiting_human_approval"}
+```
+
+## Tool Access
+
+Crews have access to tools based on their role:
+
+| Crew | Tools |
+|------|-------|
+| All Design Crews | None (pure LLM reasoning) |
+| ECS Implementation | File system (future) |
+| Rendering | File system (future) |
+| Asset Pipeline | Meshy API |
+| QA Validation | File system, shell |
 
 ## Deliverable Standards
 
 Every CrewAI task output must include:
-1. README.md with usage docs
-2. Passing unit tests
-3. TypeScript type exports (if applicable)
-4. Integration notes for frontend
+
+1. **Design Docs**: Markdown format matching contracts in `shared/contracts/`
+2. **Code**: TypeScript with zero errors, following `.ruler/` patterns
+3. **QA Status**: Explicit APPROVED/REJECTED verdict
+4. **Integration Notes**: How output connects to next phase
+
+## Running Flows
+
+```bash
+# Run design phase
+uv run crew_agents design
+
+# Run implementation
+uv run crew_agents implement
+
+# Run asset generation
+uv run crew_agents assets
+
+# Run complete pipeline
+uv run crew_agents full
+```
+
+## Configuration Files
+
+Each crew has its own config directory:
+
+```
+crews/<crew_name>/config/
+├── agents.yaml    # Agent definitions (role, goal, backstory)
+└── tasks.yaml     # Task definitions (description, expected_output)
+```
+
+## See Also
+
+- Main README: `python/crew_agents/README.md`
+- CrewAI Docs: https://docs.crewai.com/
+- OpenRouter: https://openrouter.ai/
