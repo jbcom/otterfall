@@ -74,7 +74,7 @@ class GameBuilderCrew:
             config=self.agents_config["senior_typescript_engineer"],
             llm=get_llm(),
             tools=[self.code_writer, self.code_reader, self.dir_lister],
-            allow_code_execution=False,  # Disabled - requires Docker
+            allow_code_execution=True,  # Can write and test code
             allow_delegation=False,
             verbose=True,
         )
@@ -128,6 +128,8 @@ class GameBuilderCrew:
     @crew
     def crew(self) -> Crew:
         """Creates the Game Builder Crew with planning and memory."""
+        knowledge_sources = load_knowledge_sources()
+        
         # Get LLM for planning (must use OpenRouter, not OpenAI)
         planner_llm = get_llm()
 
@@ -137,7 +139,8 @@ class GameBuilderCrew:
             process=Process.sequential,
             planning=True,  # Enable step-by-step planning
             planning_llm=planner_llm,  # Use OpenRouter for planning
-            memory=False,  # Disabled - requires additional setup
+            memory=True,  # Enable memory for learning
+            knowledge_sources=knowledge_sources if knowledge_sources else None,
             verbose=True,
         )
 
