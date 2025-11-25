@@ -128,15 +128,17 @@ jobs:
         run: |
           cd python/crew_agents
 
+          # Extract species from issue title (same pattern as approval step)
+          SPECIES=$(echo "${{ github.event.issue.title }}" | grep -oP '(?<=: )\w+' || echo "unknown")
           ADJUSTMENTS='${{ steps.parse.outputs.args }}'
 
-          echo "Regenerating with adjustments: $ADJUSTMENTS"
+          echo "Regenerating $SPECIES with adjustments: $ADJUSTMENTS"
 
           # Re-run meshy asset flow with adjustments
           if [[ -n "$ADJUSTMENTS" ]]; then
-            uv run python -m crew_agents.run_flow meshy_asset otter "$ADJUSTMENTS"
+            uv run python -m crew_agents.run_flow meshy_asset "$SPECIES" "$ADJUSTMENTS"
           else
-            uv run python -m crew_agents.run_flow meshy_asset
+            uv run python -m crew_agents.run_flow meshy_asset "$SPECIES"
           fi
 
       - name: Update issue status
