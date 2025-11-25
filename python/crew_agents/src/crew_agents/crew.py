@@ -88,16 +88,32 @@ class CrewAgents:
 
         Returns:
             CrewOutput from crew execution
+
+        Note:
+            This method does NOT mutate the inputs dict passed by caller.
         """
-        task_name = inputs.pop("task", None) if inputs else None
+        task_name = inputs.get("task") if inputs else None
+        # Create filtered inputs without mutating original
+        filtered_inputs = (
+            {k: v for k, v in inputs.items() if k != "task"} if inputs else None
+        )
         crew = self._get_crew_for_task(task_name)
-        return crew.kickoff(inputs=inputs)
+        return crew.kickoff(inputs=filtered_inputs)
 
     def kickoff_async(self, inputs: Optional[Dict[str, Any]] = None) -> Any:
-        """Async version of kickoff for parallel execution."""
-        task_name = inputs.pop("task", None) if inputs else None
+        """
+        Async version of kickoff for parallel execution.
+
+        Note:
+            This method does NOT mutate the inputs dict passed by caller.
+        """
+        task_name = inputs.get("task") if inputs else None
+        # Create filtered inputs without mutating original
+        filtered_inputs = (
+            {k: v for k, v in inputs.items() if k != "task"} if inputs else None
+        )
         crew = self._get_crew_for_task(task_name)
-        return crew.kickoff_async(inputs=inputs)
+        return crew.kickoff_async(inputs=filtered_inputs)
 
 
 def load_crewbase():
@@ -115,6 +131,9 @@ def kickoff(inputs: dict = None):
         inputs: Optional dict with:
             - task: Specific task name to run
             - All other task inputs from crewbase.yaml
+
+    Note:
+        This function does NOT mutate the inputs dict passed by caller.
     """
     load_crewbase()
 
@@ -123,14 +142,18 @@ def kickoff(inputs: dict = None):
     crew = Crew.from_yaml(str(Path(__file__).parent.parent.parent / "crewbase.yaml"))
 
     # If specific task requested, filter to that task
-    # Use pop() to remove task key so it's not passed to crew.kickoff()
-    if inputs and "task" in inputs:
-        task_name = inputs.pop("task")
+    # Create filtered inputs without mutating original
+    task_name = inputs.get("task") if inputs else None
+    filtered_inputs = (
+        {k: v for k, v in inputs.items() if k != "task"} if inputs else None
+    )
+
+    if task_name:
         crew.tasks = [t for t in crew.tasks if t.name == task_name]
         if not crew.tasks:
             raise ValueError(f"Task '{task_name}' not found in crewbase.yaml")
 
-    return crew.kickoff(inputs=inputs)
+    return crew.kickoff(inputs=filtered_inputs)
 
 
 def train(n_iterations: int = 5, inputs: dict = None):

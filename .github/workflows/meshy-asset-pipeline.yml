@@ -148,6 +148,9 @@ jobs:
             exit 1
           fi
 
+          # Ensure download directory exists before Python runs
+          mkdir -p "${{ env.MODELS_PATH }}/$SPECIES"
+
           # Download GLB and update manifest (use absolute paths from repo root)
           cd python/mesh_toolkit
           uv run python -c "
@@ -314,6 +317,9 @@ jobs:
           SPECIES='${{ github.event.client_payload.species }}'
           ANIM_TYPE='${{ github.event.client_payload.animation_type }}'
 
+          # Ensure download directory exists
+          mkdir -p "${{ env.MODELS_PATH }}/$SPECIES"
+
           cd python/mesh_toolkit
           uv run python -c "
           import os
@@ -355,51 +361,130 @@ jobs:
             git push
           fi
 
-  # HITL Review notification
-  # Runs when any of the processing jobs succeed (they're mutually exclusive per webhook type)
-  notify-review:
-    needs: [process-static, process-rigged, process-animated]
-    if: |
-      always() && !cancelled() &&
-      (needs.process-static.result == 'success' ||
-       needs.process-rigged.result == 'success' ||
-       needs.process-animated.result == 'success')
+  # Process retextured model webhooks
+  process-retextured:
+    if: github.event.action == 'meshy_webhook_retextured'
+    runs-on: ubuntu-latest
+    outputs:
+      species: ${{ steps.process.outputs.species }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python with uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies
+        run: |
+          uv python install ${{ env.PYTHON_VERSION }}
+          cd python/mesh_toolkit
+          uv sync
+
+      - name: Download retextured GLB
+        id: process
+        env:
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+        run: |
+          TASK_ID='${{ github.event.client_payload.task_id }}'
+          SPECIES='${{ github.event.client_payload.species }}'
+          echo "species=$SPECIES" >> $GITHUB_OUTPUT
+
+          # Ensure download directory exists
+          mkdir -p "${{ env.MODELS_PATH }}/$SPECIES"
+
+          cd python/mesh_toolkit
+          uv run python -c "
+          import os
+          from pathlib import Path
+          from mesh_toolkit.client import MeshyClient
+          from mesh_toolkit.persistence.repository import TaskRepository
+
+          repo_root = Path(os.environ.get('GITHUB_WORKSPACE', '../..'))
+          models_base = repo_root / 'client/public/models'
+
+          client = MeshyClient()
+          repo = TaskRepository(base_path=str(models_base))
+
+          result = client.get_retexture('$TASK_ID')
+          output_path = models_base / '$SPECIES' / 'retextured.glb'
+          output_path.parent.mkdir(parents=True, exist_ok=True)
+
+          client.download_file(result.model_urls.glb, str(output_path))
+          print(f'Downloaded: {output_path}')
+
+          repo.record_task_update(
+              species='$SPECIES',
+              spec_hash='${{ github.event.client_payload.spec_hash }}',
+              task_id='$TASK_ID',
+              status='SUCCEEDED',
+              result_paths={'glb': str(output_path.relative_to(repo_root))}
+          )
+          "
+
+      - name: Commit retextured GLB
+        run: |
+          git config user.name "CrewAI Bot"
+          git config user.email "crewai-bot@github.actions"
+
+          if [[ -n $(git status --porcelain) ]]; then
+            git add -A
+            git commit -m "feat(assets): Downloaded retextured model for ${{ github.event.client_payload.species }}"
+            git push
+          fi
+
+  # HITL Review notification - runs independently for each webhook type that completes
+  # Each processing job triggers its own notification since they're mutually exclusive
+  notify-review-static:
+    needs: [process-static]
+    if: always() && needs.process-static.result == 'success'
     runs-on: ubuntu-latest
     steps:
-      - name: Create review issue
+      - name: Create review issue for static model
         uses: actions/github-script@v7
         with:
           script: |
-            // Handle empty string case - check for actual value, not just truthy
-            const clientPayloadSpecies = '${{ github.event.client_payload.species }}';
-            const inputSpecies = '${{ inputs.species }}';
-            const species = (clientPayloadSpecies && clientPayloadSpecies.trim() !== '')
-              ? clientPayloadSpecies
-              : (inputSpecies && inputSpecies.trim() !== '' ? inputSpecies : 'unknown');
-
+            const species = '${{ github.event.client_payload.species }}' || 'unknown';
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `[HITL Review] Asset generation complete: ${species}`,
-              body: `## Asset Generation Complete
+              title: `[HITL Review] Static model ready: ${species}`,
+              body: `## Static Model Generation Complete\n\n**Species:** ${species}\n**Workflow Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\n### Asset\n- Static model (static.glb) - ready for rigging\n\n### Review\nRigging task has been automatically submitted. Monitor the pipeline for next steps.`,
+              labels: ['hitl-review', 'assets', 'static-model']
+            });
 
-              **Species:** ${species}
-              **Workflow Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+  notify-review-animated:
+    needs: [process-animated]
+    if: always() && needs.process-animated.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create review issue for animation
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const species = '${{ github.event.client_payload.species }}' || 'unknown';
+            const animType = '${{ github.event.client_payload.animation_type }}' || 'animation';
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[HITL Review] Animation complete: ${species} - ${animType}`,
+              body: `## Animation Generation Complete\n\n**Species:** ${species}\n**Animation:** ${animType}\n**Workflow Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\n### Review Checklist\n- [ ] Animation plays correctly\n- [ ] Timing looks natural\n- [ ] No clipping or artifacts\n\n### Actions\n- Comment \`/approve ${species}\` to mark as ready\n- Comment \`/reject ${species}\` with feedback to regenerate`,
+              labels: ['hitl-review', 'assets', 'animation']
+            });
 
-              ### Generated Assets
-              - [ ] Static model (static.glb)
-              - [ ] Walk animation (walk.glb)
-              - [ ] Attack animation (attack.glb)
-
-              ### Review Checklist
-              - [ ] Model quality acceptable
-              - [ ] Animations play correctly
-              - [ ] Textures look good
-              - [ ] Scale is appropriate for game
-
-              ### Actions
-              - Comment \`/approve\` to integrate into ECS
-              - Comment \`/reject\` with feedback to regenerate
-              `,
-              labels: ['hitl-review', 'assets', 'crewai']
+  notify-review-retextured:
+    needs: [process-retextured]
+    if: always() && needs.process-retextured.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create review issue for retexture
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const species = '${{ github.event.client_payload.species }}' || 'unknown';
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[HITL Review] Retexture complete: ${species}`,
+              body: `## Retexture Generation Complete\n\n**Species:** ${species}\n**Workflow Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\n### Review Checklist\n- [ ] Texture quality acceptable\n- [ ] Colors look correct\n- [ ] No artifacts or seams\n\n### Actions\n- Comment \`/approve ${species}\` to mark as ready\n- Comment \`/reject ${species}\` with feedback to regenerate`,
+              labels: ['hitl-review', 'assets', 'retexture']
             });

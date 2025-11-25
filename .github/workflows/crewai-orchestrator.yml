@@ -210,25 +210,36 @@ jobs:
           echo "Action: $CREW_ACTION"
           echo "Args: $CREW_FLOW_ARGS"
 
-          # Run the appropriate flow
+          # Parse flow args JSON and pass to Python (handles empty/invalid JSON gracefully)
+          PARSED_ARGS=""
+          if [[ -n "$CREW_FLOW_ARGS" && "$CREW_FLOW_ARGS" != "{}" ]]; then
+            # Validate JSON before passing
+            if echo "$CREW_FLOW_ARGS" | jq -e . >/dev/null 2>&1; then
+              PARSED_ARGS="--args '$CREW_FLOW_ARGS'"
+            else
+              echo "Warning: Invalid JSON in CREW_FLOW_ARGS, ignoring"
+            fi
+          fi
+
+          # Run the appropriate flow with arguments
           case "$CREW_FLOW" in
             full_crew_kickoff)
-              uv run python -m crew_agents.crew
+              eval "uv run python -m crew_agents.crew $PARSED_ARGS"
               ;;
             tdd_prototype)
-              uv run python -m crew_agents.run_flow tdd_prototype
+              eval "uv run python -m crew_agents.run_flow tdd_prototype $PARSED_ARGS"
               ;;
             meshy_asset)
-              uv run python -m crew_agents.run_flow meshy_asset
+              eval "uv run python -m crew_agents.run_flow meshy_asset $PARSED_ARGS"
               ;;
             prototype_assessment)
-              uv run python -m crew_agents.run_flow prototype_assessment
+              eval "uv run python -m crew_agents.run_flow prototype_assessment $PARSED_ARGS"
               ;;
             asset_integration)
-              uv run python -m crew_agents.run_flow asset_integration
+              eval "uv run python -m crew_agents.run_flow asset_integration $PARSED_ARGS"
               ;;
             batch_generation)
-              uv run python -m crew_agents.run_flow batch_generation
+              eval "uv run python -m crew_agents.run_flow batch_generation $PARSED_ARGS"
               ;;
             *)
               echo "Unknown flow: $CREW_FLOW"

@@ -1,7 +1,14 @@
-"""Unit tests for CrewAI crews"""
+"""Unit tests for CrewAI crews
+
+Testing patterns follow CrewAI best practices:
+- Unit tests mock Task.execute_sync to avoid actual LLM calls
+- Import tests verify module structure without instantiation
+- State tests validate Pydantic models
+"""
 
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, PropertyMock
+from pathlib import Path
 
 
 class TestLLMConfig:
@@ -137,3 +144,172 @@ class TestFlowState:
         assert hasattr(state, "asset_specs")
         assert hasattr(state, "approved_assets")
         assert hasattr(state, "rejected_assets")
+
+
+class TestCrewAgentsClass:
+    """Test the CrewAgents wrapper class"""
+
+    def test_crew_agents_init_with_default_path(self):
+        """Test CrewAgents initializes with default config path"""
+        from crew_agents.crew import CrewAgents, get_crewbase_path
+
+        agent = CrewAgents()
+        assert agent.config_path == get_crewbase_path()
+
+    def test_crew_agents_init_with_custom_path(self):
+        """Test CrewAgents accepts custom config path"""
+        from crew_agents.crew import CrewAgents
+
+        custom_path = Path("/tmp/custom_config.yaml")
+        agent = CrewAgents(config_path=custom_path)
+        assert agent.config_path == custom_path
+
+    def test_kickoff_does_not_mutate_inputs(self):
+        """Test that kickoff() does not modify the original inputs dict"""
+        from crew_agents.crew import CrewAgents
+
+        # Create mock crew that returns immediately
+        with patch("crew_agents.crew.Crew") as MockCrew:
+            mock_crew_instance = MagicMock()
+            mock_crew_instance.tasks = []
+            mock_crew_instance.kickoff.return_value = "result"
+            MockCrew.from_yaml.return_value = mock_crew_instance
+
+            agent = CrewAgents()
+            original_inputs = {"task": "some_task", "key": "value"}
+            inputs_copy = original_inputs.copy()
+
+            # Even though kickoff fails (no tasks), inputs should not be mutated
+            try:
+                agent.kickoff(inputs=original_inputs)
+            except ValueError:
+                pass  # Expected - no matching tasks
+
+            # Original dict should be unchanged
+            assert original_inputs == inputs_copy
+
+    def test_kickoff_async_does_not_mutate_inputs(self):
+        """Test that kickoff_async() does not modify the original inputs dict"""
+        from crew_agents.crew import CrewAgents
+
+        with patch("crew_agents.crew.Crew") as MockCrew:
+            mock_crew_instance = MagicMock()
+            mock_crew_instance.tasks = []
+            mock_crew_instance.kickoff_async.return_value = "async_result"
+            MockCrew.from_yaml.return_value = mock_crew_instance
+
+            agent = CrewAgents()
+            original_inputs = {"task": "some_task", "another": "param"}
+            inputs_copy = original_inputs.copy()
+
+            try:
+                agent.kickoff_async(inputs=original_inputs)
+            except ValueError:
+                pass  # Expected - no matching tasks
+
+            # Original dict should be unchanged
+            assert original_inputs == inputs_copy
+
+    def test_get_crew_for_task_raises_on_unknown_task(self):
+        """Test that _get_crew_for_task raises ValueError for unknown task"""
+        from crew_agents.crew import CrewAgents
+
+        with patch("crew_agents.crew.Crew") as MockCrew:
+            mock_task = MagicMock()
+            mock_task.name = "existing_task"
+
+            mock_crew_instance = MagicMock()
+            mock_crew_instance.tasks = [mock_task]
+            MockCrew.from_yaml.return_value = mock_crew_instance
+
+            agent = CrewAgents()
+
+            with pytest.raises(ValueError) as exc_info:
+                agent._get_crew_for_task("nonexistent_task")
+
+            assert "nonexistent_task" in str(exc_info.value)
+            assert "Available:" in str(exc_info.value)
+
+    def test_get_crew_for_task_returns_cached_crew_when_no_filter(self):
+        """Test that _get_crew_for_task returns cached crew when no task filter"""
+        from crew_agents.crew import CrewAgents
+
+        with patch("crew_agents.crew.Crew") as MockCrew:
+            mock_crew_instance = MagicMock()
+            MockCrew.from_yaml.return_value = mock_crew_instance
+
+            agent = CrewAgents()
+
+            # First call creates the crew
+            crew1 = agent._get_crew_for_task(None)
+            # Second call should return same instance (cached)
+            crew2 = agent._get_crew_for_task(None)
+
+            assert crew1 is crew2
+            # from_yaml should only be called once for cached access
+            assert MockCrew.from_yaml.call_count == 1
+
+
+class TestStandaloneKickoffFunction:
+    """Test the standalone kickoff function"""
+
+    def test_kickoff_function_does_not_mutate_inputs(self):
+        """Test that standalone kickoff() function doesn't mutate inputs"""
+        from crew_agents.crew import kickoff
+
+        with patch("crew_agents.crew.Crew") as MockCrew:
+            mock_crew_instance = MagicMock()
+            mock_crew_instance.tasks = []
+            mock_crew_instance.kickoff.return_value = "result"
+            MockCrew.from_yaml.return_value = mock_crew_instance
+
+            with patch("crew_agents.crew.load_crewbase"):
+                original_inputs = {"task": "test_task", "data": "important"}
+                inputs_copy = original_inputs.copy()
+
+                # Task filtering will result in empty tasks, but inputs should stay intact
+                try:
+                    kickoff(inputs=original_inputs)
+                except Exception:
+                    pass
+
+                assert original_inputs == inputs_copy
+
+    def test_kickoff_filters_task_correctly(self):
+        """Test that kickoff correctly filters to specified task"""
+        from crew_agents.crew import kickoff
+
+        with patch("crew_agents.crew.Crew") as MockCrew:
+            mock_task_1 = MagicMock()
+            mock_task_1.name = "task_one"
+            mock_task_2 = MagicMock()
+            mock_task_2.name = "task_two"
+
+            mock_crew_instance = MagicMock()
+            mock_crew_instance.tasks = [mock_task_1, mock_task_2]
+            mock_crew_instance.kickoff.return_value = "result"
+            MockCrew.from_yaml.return_value = mock_crew_instance
+
+            with patch("crew_agents.crew.load_crewbase"):
+                kickoff(inputs={"task": "task_one"})
+
+                # Verify crew tasks were filtered
+                assert mock_crew_instance.tasks == [mock_task_1]
+
+    def test_kickoff_raises_for_unknown_task(self):
+        """Test that kickoff raises ValueError for unknown task name"""
+        from crew_agents.crew import kickoff
+
+        with patch("crew_agents.crew.Crew") as MockCrew:
+            mock_task = MagicMock()
+            mock_task.name = "existing_task"
+
+            mock_crew_instance = MagicMock()
+            mock_crew_instance.tasks = [mock_task]
+            MockCrew.from_yaml.return_value = mock_crew_instance
+
+            with patch("crew_agents.crew.load_crewbase"):
+                with pytest.raises(ValueError) as exc_info:
+                    kickoff(inputs={"task": "nonexistent"})
+
+                assert "nonexistent" in str(exc_info.value)

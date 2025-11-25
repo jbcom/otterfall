@@ -29,15 +29,23 @@ import urllib.error
 
 # Configuration
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
-GITHUB_REPO = os.environ.get("GITHUB_REPO", "owner/otterfall")
+GITHUB_REPO = os.environ.get("GITHUB_REPO")  # Required - must be set explicitly
 WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
 PORT = int(os.environ.get("PORT", 8000))
 
 
 def verify_signature(payload: bytes, signature: str) -> bool:
-    """Verify webhook signature if secret is configured."""
+    """Verify webhook signature if secret is configured.
+    
+    WARNING: If WEBHOOK_SECRET is not set, signature verification is bypassed.
+    This allows any external party to trigger GitHub Actions workflows.
+    Always set WEBHOOK_SECRET in production environments.
+    """
     if not WEBHOOK_SECRET:
-        return True  # No verification if no secret
+        import sys
+        print("WARNING: WEBHOOK_SECRET not configured - signature verification disabled!", file=sys.stderr)
+        print("WARNING: Any source can trigger workflows. Set WEBHOOK_SECRET in production.", file=sys.stderr)
+        return True
 
     expected = hmac.new(
         WEBHOOK_SECRET.encode(),
@@ -170,11 +178,17 @@ class WebhookHandler(BaseHTTPRequestHandler):
 def main():
     """Run webhook proxy server."""
     if not GITHUB_TOKEN:
-        print("WARNING: GITHUB_TOKEN not set - dispatches will fail")
+        print("ERROR: GITHUB_TOKEN not set - dispatches will fail")
+        
+    if not GITHUB_REPO:
+        print("ERROR: GITHUB_REPO not set - must be in format 'owner/repo'")
+        print("Set GITHUB_REPO environment variable before starting the server.")
+        import sys
+        sys.exit(1)
 
     print(f"Starting webhook proxy on port {PORT}")
     print(f"GitHub repo: {GITHUB_REPO}")
-    print(f"Webhook secret: {'configured' if WEBHOOK_SECRET else 'not configured'}")
+    print(f"Webhook secret: {'configured' if WEBHOOK_SECRET else 'NOT CONFIGURED (insecure!)'}")
 
     server = HTTPServer(("0.0.0.0", PORT), WebhookHandler)
     server.serve_forever()
