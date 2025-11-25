@@ -13,13 +13,11 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-  # Allow manual triggering
   workflow_dispatch:
 
 env:
   PYTHON_VERSION: '3.11'
   NODE_VERSION: '20'
-  UV_VERSION: '0.5.14'
 
 jobs:
   # TypeScript and Frontend checks
@@ -43,8 +41,7 @@ jobs:
       - name: Get pnpm store directory
         shell: bash
         run: |
-          STORE=$(pnpm store path --silent 2>/dev/null || echo "$HOME/.local/share/pnpm/store")
-          echo "STORE_PATH=$STORE" >> $GITHUB_ENV
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
       - name: Setup pnpm cache
         uses: actions/cache@v4
@@ -53,7 +50,6 @@ jobs:
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-        continue-on-error: true  # Don't fail if cache fails
 
       - name: Install dependencies
         run: pnpm install
@@ -81,76 +77,56 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python with uv
-        uses: astral-sh/setup-uv@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "python/**/pyproject.toml"
 
-      - name: Install Python
+      - name: Set up Python
         run: uv python install ${{ env.PYTHON_VERSION }}
 
-      - name: Cache uv dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-uv-${{ hashFiles('python/**/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-uv-
-
-      - name: Install mesh_toolkit
+      - name: Install mesh_toolkit and run tests
+        working-directory: python/mesh_toolkit
         run: |
-          cd python/mesh_toolkit
-          uv sync --no-dev
-
-      - name: Install crew_agents
-        run: |
-          cd python/crew_agents
-          uv sync --no-dev
-        continue-on-error: true  # May fail due to crewai deps, tests still run
-
-      - name: Run mesh_toolkit unit tests
-        run: |
-          cd python/mesh_toolkit
-          uv sync  # Full sync for tests
-          uv run pytest ../tests/unit -v --tb=short -x --ignore=../tests/unit/crew_agents
-
-      - name: Run crew_agents unit tests
-        run: |
-          cd python/crew_agents
           uv sync
-          uv run pytest ../tests/unit/crew_agents -v --tb=short -x
-        continue-on-error: true  # CrewAI may have complex deps
+          uv run pytest ../tests/unit -v --tb=short --ignore=../tests/unit/crew_agents
 
-  # Python integration tests (requires API keys, skipped if not available)
+      - name: Install crew_agents and run tests
+        working-directory: python/crew_agents
+        run: |
+          uv sync
+          uv run pytest ../tests/unit/crew_agents -v --tb=short
+        continue-on-error: true  # CrewAI has complex deps
+
+  # Python integration tests (requires API keys)
   python-integration:
     name: Python Integration Tests
     runs-on: ubuntu-latest
-    # Only run on main branch or when explicitly requested
     if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'run-integration')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python with uv
-        uses: astral-sh/setup-uv@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "python/**/pyproject.toml"
 
-      - name: Install Python
+      - name: Set up Python
         run: uv python install ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
-        run: |
-          cd python/mesh_toolkit
-          uv sync --all-extras
+        working-directory: python/mesh_toolkit
+        run: uv sync --all-extras
 
       - name: Run integration tests
+        working-directory: python/mesh_toolkit
         env:
           MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
         run: |
-          cd python
-          # Integration tests will skip if MESHY_API_KEY not set
-          uv run --project mesh_toolkit pytest tests/integration -v --tb=short -x || echo "Integration tests skipped (no API key)"
+          uv run pytest ../tests/integration -v --tb=short || echo "Integration tests skipped or failed"
 
   # Python code quality
   python-lint:
@@ -160,27 +136,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python with uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: ${{ env.UV_VERSION }}
-
-      - name: Install Python
-        run: uv python install ${{ env.PYTHON_VERSION }}
-
-      - name: Install ruff
-        run: uv tool install ruff
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
       - name: Run ruff check
-        run: |
-          cd python
-          uv tool run ruff check . --output-format=github
+        working-directory: python
+        run: uvx ruff check . --output-format=github
         continue-on-error: true  # TODO: Fix existing lint errors then remove this
 
       - name: Run ruff format check
-        run: |
-          cd python
-          uv tool run ruff format --check .
+        working-directory: python
+        run: uvx ruff format --check .
         continue-on-error: true  # TODO: Fix existing format errors then remove this
 
   # Workflow validation
@@ -197,7 +163,7 @@ jobs:
           args: -color
         continue-on-error: true  # Informational only
 
-  # Summary job that depends on all others
+  # Summary job
   ci-complete:
     name: CI Complete
     needs: [frontend, python-unit, python-lint, workflow-lint]
@@ -211,9 +177,9 @@ jobs:
           echo "Python Lint: ${{ needs.python-lint.result }}"
           echo "Workflow Lint: ${{ needs.workflow-lint.result }}"
 
-          # Fail if any required job failed (not just skipped)
-          if [[ "${{ needs.python-unit.result }}" == "failure" ]]; then
-            echo "::error::Python unit tests failed"
+          # Fail if any required job failed
+          if [[ "${{ needs.frontend.result }}" == "failure" ]]; then
+            echo "::error::Frontend checks failed"
             exit 1
           fi
 
