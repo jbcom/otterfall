@@ -343,12 +343,10 @@ process-compose logs conport
 │
 ├── .cursor/
 │   ├── Dockerfile               # Development container
-│   ├── docker-compose.yml       # Container orchestration
 │   ├── environment.json         # Build configuration
-│   ├── rules/                   # Cursor-specific rules
-│   │   ├── 00-loader.mdc        # Rule loader
-│   │   └── 10-background-agent-conport.mdc
-│   └── supervisord.conf         # Process supervision
+│   └── rules/                   # Cursor-specific rules
+│       ├── 00-loader.mdc        # Rule loader
+│       └── 10-background-agent-conport.mdc
 │
 ├── client/                      # React Three Fiber frontend
 │   ├── src/
