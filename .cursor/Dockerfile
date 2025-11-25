@@ -1,24 +1,19 @@
-# Rivermarsh Development Environment
-# Supports: Node.js (React Three Fiber), Python (CrewAI), Android (Capacitor)
-
 FROM node:24-bookworm-slim
 
 # Display for GUI-based tests
 ENV DISPLAY=:99
 
-# Install system dependencies
+# Install system dependencies for browsers, builds, Electron, and Android tooling
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Build essentials
+    # Build essentials (native Node modules like better-sqlite3)
     git \
     git-lfs \
     curl \
     wget \
     build-essential \
     pkg-config \
-    # Python 3.12+ for CrewAI
     python3 \
     python3-pip \
-    python3-venv \
     # X11 libraries for GUI testing
     xvfb \
     x11-utils \
@@ -60,7 +55,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxshmfence1 \
     libpango-1.0-0 \
     ffmpeg \
-    # OpenGL/WebGL testing (React Three Fiber)
+    # SDL2 for game testing
+    libsdl2-dev \
+    libsdl2-image-dev \
+    libsdl2-mixer-dev \
+    libsdl2-ttf-dev \
+    # OpenGL/WebGL testing
     libgl1-mesa-dev \
     libglu1-mesa-dev \
     mesa-utils \
@@ -69,28 +69,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     gradle \
     ca-certificates \
-    # Redis for agent task queue
-    redis-server \
-    supervisor \
     && rm -rf /var/lib/apt/lists/*
 
-# Initialize git-lfs with SMUDGE FILTER DISABLED
-# Prevents crashes with large LFS repos - actual LFS ops happen in GitHub Actions
+# Initialize git-lfs in the image environment with SMUDGE FILTER DISABLED
+# This prevents crashes when loading repos with 600+ LFS objects
+# LFS files will appear as pointers, which is fine for Cursor/AI analysis
+# Actual LFS operations (checkout, pull) happen in GitHub Actions
 RUN git lfs install --system --skip-smudge
 
-# Install uv (Python package manager - fast, modern)
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.local/bin:$PATH"
+# Note: git-lfs package is installed above (line 10)
+# CRITICAL: --skip-smudge prevents workspace crashes with large LFS repos
+# All .glb files (3D models) are tracked via LFS (configured in .gitattributes)
+# GitHub Actions workflows handle actual LFS file operations
 
 # Install just command runner
 RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
-
-# Install process-compose (multi-process orchestration)
-RUN curl -L -o /tmp/process-compose.tar.gz \
-    "https://github.com/F1bonacc1/process-compose/releases/download/v1.51.1/process-compose_linux_amd64.tar.gz" \
-    && tar -xzf /tmp/process-compose.tar.gz -C /usr/local/bin process-compose \
-    && chmod +x /usr/local/bin/process-compose \
-    && rm /tmp/process-compose.tar.gz
 
 # Install GitHub CLI
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
@@ -100,16 +93,21 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | d
     && apt-get install -y gh \
     && rm -rf /var/lib/apt/lists/*
 
-# pnpm via Corepack (MANDATORY package manager for this project)
+# Install Redis for agent fleet task queue
+RUN apt-get update && apt-get install -y redis-server supervisor && rm -rf /var/lib/apt/lists/*
+
+# pnpm via Corepack (MANDATORY package manager)
 ENV PNPM_HOME=/root/.local/share/pnpm
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate && pnpm --version
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate && pnpm --version
 
 # Playwright: install required OS deps and cache Chromium browser
 RUN pnpm dlx playwright install-deps
 RUN pnpm dlx playwright install chromium
 
-# Android SDK (for Capacitor Android builds)
+# Android SDK (for Capacitor Android tasks)
+# Use a variable for the command line tools version for easier updates.
+# Last tested/compatible version as of 2024-06. Update as needed.
 ENV ANDROID_CMDLINE_TOOLS_VERSION=11076708
 ENV ANDROID_SDK_ROOT=/opt/android-sdk ANDROID_HOME=/opt/android-sdk
 ENV PATH="$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools"
@@ -121,13 +119,7 @@ RUN mkdir -p /opt/android-sdk/cmdline-tools \
 
 RUN yes | sdkmanager --licenses && sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-# Environment variables
-ENV CHROME_BIN=/usr/bin/chromium
-ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Useful envs for Selenium
+ENV CHROME_BIN=/usr/bin/chromium CHROMEDRIVER_PATH=/usr/bin/chromedriver
 
 WORKDIR /workspace
-
-# Copy supervisord config for multi-process support
-COPY .cursor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
