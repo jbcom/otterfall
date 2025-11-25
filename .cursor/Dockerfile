@@ -1,6 +1,6 @@
-# Start with uv base image (Python 3.13 + uv pre-configured)
-# This gives us proper Python tooling out of the box
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+# Pre-built image with Python 3.13 + Node.js 24 + uv
+# https://github.com/nikolaik/docker-python-nodejs
+FROM nikolaik/python-nodejs:python3.13-nodejs24
 
 # =============================================================================
 # SYSTEM DEPENDENCIES
@@ -13,10 +13,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Version control
     git \
     git-lfs \
-    # Download utilities
-    curl \
-    wget \
-    ca-certificates \
     # Playwright/Chromium dependencies (headless browser testing)
     chromium \
     chromium-driver \
@@ -45,15 +41,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # LFS files appear as pointers (fine for Cursor/AI analysis)
 # Actual LFS operations (checkout, pull) handled by GitHub Actions
 RUN git lfs install --system --skip-smudge
-
-# =============================================================================
-# NODE.JS INSTALLATION
-# =============================================================================
-# Install Node.js 24.x - simple binary installation
-ENV NODE_VERSION=24.13.1
-RUN curl -fsSL https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz | \
-    tar -xJ -C /usr/local --strip-components=1 && \
-    node --version && npm --version
 
 # =============================================================================
 # NODE.JS PACKAGE MANAGER (pnpm)
