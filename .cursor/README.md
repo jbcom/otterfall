@@ -1,83 +1,77 @@
-# Rivermarsh - Docker Development Environment
+# Rivermarsh - Cursor Docker Environment
 
-This directory contains a production-grade Docker environment for Rivermarsh game development.
+This directory contains the Docker configuration for Cursor's remote development environment.
 
-## 🎯 Why This Setup?
+## 🎯 What's Included
 
-- **Consistency**: Matches GitHub Actions CI environment exactly
-- **Full Stack**: Node.js 24 + Python 3.12 + Android SDK
-- **No Version Conflicts**: Eliminates "works on my machine" issues
-- **Complete Toolchain**: All dependencies pre-installed (uv, pnpm, Playwright, Android SDK)
+- **Node.js 24** + **Python 3.13** via `nikolaik/python-nodejs` base image
+- **pnpm 9.15.0** - Node package manager
+- **uv** - Python package manager (pre-installed in base image)
+- **process-compose** - Multi-process orchestration (replaces docker-compose)
+- **Playwright + Chromium** - Browser testing
+- **just** - Task runner
+- **GitHub CLI** - CI/CD integration
 
-## 🚀 Quick Start
+## 🚀 Usage
 
-### Using Docker Compose (Recommended)
+This Dockerfile is used **automatically** by Cursor when you open the workspace in a remote container.
+
+### Manual Build (for testing)
 
 ```bash
-# Start interactive development shell
-docker-compose -f .cursor/docker-compose.yml up -d dev
-docker-compose -f .cursor/docker-compose.yml exec dev bash
+# Build the image
+docker build -t rivermarsh-dev -f .cursor/Dockerfile .
 
-# Inside container:
+# Run interactively
+docker run -it --rm -v $(pwd):/workspace rivermarsh-dev bash
+```
+
+## 📋 Development Workflow
+
+### Frontend Development
+```bash
+pnpm install        # Install dependencies
 pnpm run dev        # Start Vite dev server
 pnpm run build      # Build production
 pnpm test           # Run tests
 ```
 
-### CrewAI Development
-
-```bash
-# Run CrewAI flows
-docker-compose -f .cursor/docker-compose.yml --profile crewai run crewai
-
-# Or manually:
-cd python/crew_agents
-uv run crew_agents design      # Run game design flow
-uv run crew_agents implement   # Run implementation flow
-uv run crew_agents assets      # Run asset generation flow
-```
-
-## 📋 Common Tasks
-
-### Frontend Development
-```bash
-# Start dev server (accessible at http://localhost:5173)
-docker-compose run --rm -p 5173:5173 dev pnpm run dev
-
-# Build production
-docker-compose run --rm dev pnpm run build
-
-# Run tests
-docker-compose run --rm dev pnpm test
-```
-
 ### Python Development
 ```bash
-# Sync dependencies
-cd python/crew_agents && uv sync
-
-# Run CrewAI
-uv run crew_agents design
-
-# Run tests
-uv run pytest
+cd python/crew_agents
+uv sync             # Install dependencies
+uv run crew_agents design      # Run game design flow
+uv run pytest       # Run tests
 ```
 
-### Android Build
+### Multi-Process Orchestration
+
+We use **process-compose** (not docker-compose) for running multiple services:
+
 ```bash
-# Build APK
-docker-compose run --rm --profile android android pnpm run cap:build:android
+# Start all background processes
+process-compose up -d
+
+# View logs
+process-compose logs
+
+# Check status
+process-compose ps
+
+# Stop all
+process-compose down
 ```
+
+See `process-compose.yaml` in the project root for configuration.
 
 ## 🔧 Environment Specifications
 
 ### Included Tools
 - **Node.js**: v24.x
-- **Python**: 3.12 with uv package manager
+- **Python**: 3.13 with uv package manager (pre-installed)
 - **pnpm**: 9.15.0 (via corepack)
-- **Java**: OpenJDK 17
-- **Android SDK**: API 34, Build Tools 34.0.0
 - **Playwright**: Pre-installed with Chromium
+- **process-compose**: Multi-process orchestration
 - **GitHub CLI**: gh
 - **just**: Command runner
 
@@ -93,24 +87,9 @@ MESHY_API_KEY=your-key-here
 GITHUB_TOKEN=your-token-here
 ```
 
-## 📊 Volume Management
-
-Named volumes for performance:
-- `node_modules`: npm dependencies cache
-- `python_venv`: Python virtual environment
-- `android_gradle`: Android Gradle cache
-- `gradle_cache`: Global Gradle cache
-
-### Clean volumes if needed:
-```bash
-docker-compose -f .cursor/docker-compose.yml down -v
-docker volume prune
-```
-
 ## 🔗 Related Files
 
 - `Dockerfile` - Main image definition
-- `docker-compose.yml` - Service orchestration
 - `environment.json` - Cursor environment config
-- `supervisord.conf` - Multi-process management
+- `/process-compose.yaml` - Multi-process orchestration (project root)
 - `rules/` - Cursor rules for agents

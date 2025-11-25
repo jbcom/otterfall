@@ -1,133 +1,95 @@
-# Rivermarsh Development Environment
-# Supports: Node.js (React Three Fiber), Python (CrewAI), Android (Capacitor)
+# Pre-built image with Python 3.13 + Node.js 24 + uv
+# https://github.com/nikolaik/docker-python-nodejs
+FROM nikolaik/python-nodejs:python3.13-nodejs24
 
-FROM node:24-bookworm-slim
-
-# Display for GUI-based tests
-ENV DISPLAY=:99
-
-# Install system dependencies
+# =============================================================================
+# SYSTEM DEPENDENCIES
+# =============================================================================
+# Single consolidated layer for all apt packages to minimize image size
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    # Build essentials
-    git \
-    git-lfs \
-    curl \
-    wget \
+    # Build essentials (required for native Node modules: better-sqlite3, esbuild, etc.)
     build-essential \
     pkg-config \
-    # Python 3.12+ for CrewAI
-    python3 \
-    python3-pip \
-    python3-venv \
-    # X11 libraries for GUI testing
-    xvfb \
-    x11-utils \
-    libx11-dev \
-    libxext-dev \
-    libxrender-dev \
-    libxinerama-dev \
-    # Browser testing dependencies (Chromium + ChromeDriver)
+    # Version control
+    git \
+    git-lfs \
+    # Playwright/Chromium dependencies (headless browser testing)
     chromium \
     chromium-driver \
-    # Headless browser support libraries (Playwright/Chromium)
     libgbm1 \
-    libgbm-dev \
-    libdrm2 \
     libasound2 \
     libatk1.0-0 \
     libatk-bridge2.0-0 \
-    libgtk-3-0 \
-    libgtk-3-dev \
-    libnotify-dev \
-    libnss3 \
-    libnss3-dev \
-    libxss1 \
-    libxtst6 \
-    xdg-utils \
-    libatspi2.0-0 \
-    libsecret-1-0 \
     libcups2 \
-    libnspr4 \
-    fonts-liberation \
-    # Additional common browser deps
+    libdrm2 \
     libglib2.0-0 \
-    libgdk-pixbuf2.0-0 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
     libxcomposite1 \
     libxdamage1 \
     libxfixes3 \
-    libxrandr2 \
     libxkbcommon0 \
-    libxshmfence1 \
-    libpango-1.0-0 \
-    ffmpeg \
-    # OpenGL/WebGL testing (React Three Fiber)
-    libgl1-mesa-dev \
-    libglu1-mesa-dev \
-    mesa-utils \
-    # Android/Capacitor build prerequisites
-    openjdk-17-jdk \
-    unzip \
-    gradle \
-    ca-certificates \
-    # Redis for agent task queue
-    redis-server \
-    supervisor \
+    libxrandr2 \
+    fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
-# Initialize git-lfs with SMUDGE FILTER DISABLED
-# Prevents crashes with large LFS repos - actual LFS ops happen in GitHub Actions
+# =============================================================================
+# GIT LFS CONFIGURATION
+# =============================================================================
+# CRITICAL: --skip-smudge prevents workspace crashes with large LFS repos
+# LFS files appear as pointers (fine for Cursor/AI analysis)
+# Actual LFS operations (checkout, pull) handled by GitHub Actions
 RUN git lfs install --system --skip-smudge
 
-# Install uv (Python package manager - fast, modern)
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.local/bin:$PATH"
-
-# Install just command runner
-RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
-
-# Install process-compose (multi-process orchestration)
-RUN curl -L -o /tmp/process-compose.tar.gz \
-    "https://github.com/F1bonacc1/process-compose/releases/download/v1.51.1/process-compose_linux_amd64.tar.gz" \
-    && tar -xzf /tmp/process-compose.tar.gz -C /usr/local/bin process-compose \
-    && chmod +x /usr/local/bin/process-compose \
-    && rm /tmp/process-compose.tar.gz
-
-# Install GitHub CLI
-RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-    && apt-get update \
-    && apt-get install -y gh \
-    && rm -rf /var/lib/apt/lists/*
-
-# pnpm via Corepack (MANDATORY package manager for this project)
+# =============================================================================
+# NODE.JS PACKAGE MANAGER (pnpm)
+# =============================================================================
+# MUST match package.json "packageManager" field exactly
 ENV PNPM_HOME=/root/.local/share/pnpm
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate && pnpm --version
+RUN corepack enable && \
+    corepack prepare pnpm@9.15.0 --activate && \
+    pnpm --version
 
-# Playwright: install required OS deps and cache Chromium browser
-RUN pnpm dlx playwright install-deps
-RUN pnpm dlx playwright install chromium
+# =============================================================================
+# DEVELOPER TOOLS
+# =============================================================================
+# Install tools in a single layer to reduce image size
 
-# Android SDK (for Capacitor Android builds)
-ENV ANDROID_CMDLINE_TOOLS_VERSION=11076708
-ENV ANDROID_SDK_ROOT=/opt/android-sdk ANDROID_HOME=/opt/android-sdk
-ENV PATH="$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools"
-RUN mkdir -p /opt/android-sdk/cmdline-tools \
-    && curl -sSL -o /tmp/cmdtools.zip "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS_VERSION}_latest.zip" \
-    && unzip -q /tmp/cmdtools.zip -d /opt/android-sdk/cmdline-tools \
-    && mv /opt/android-sdk/cmdline-tools/cmdline-tools /opt/android-sdk/cmdline-tools/latest \
-    && rm -f /tmp/cmdtools.zip
+# Just command runner - Task automation
+RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | \
+    bash -s -- --to /usr/local/bin
 
-RUN yes | sdkmanager --licenses && sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+# Process-compose - Multi-process orchestration (required for CrewAI workflows)
+RUN curl -L https://github.com/F1bonacc1/process-compose/releases/download/v1.51.1/process-compose_linux_amd64.tar.gz | \
+    tar xz -C /usr/local/bin process-compose && \
+    chmod +x /usr/local/bin/process-compose && \
+    process-compose --version
 
-# Environment variables
+# GitHub CLI - CI/CD integration
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
+    dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg && \
+    chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | \
+    tee /etc/apt/sources.list.d/github-cli.list > /dev/null && \
+    apt-get update && \
+    apt-get install -y gh && \
+    rm -rf /var/lib/apt/lists/*
+
+# =============================================================================
+# PLAYWRIGHT BROWSER CACHE
+# =============================================================================
+# Pre-install Playwright dependencies and Chromium browser
+# This reduces startup time for tests and matches CI workflow
+RUN pnpm dlx playwright install-deps chromium && \
+    pnpm dlx playwright install chromium
+
+# =============================================================================
+# ENVIRONMENT VARIABLES
+# =============================================================================
+# Selenium/WebDriver paths (for integration tests)
 ENV CHROME_BIN=/usr/bin/chromium
 ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
 
 WORKDIR /workspace
-
-# Copy supervisord config for multi-process support
-COPY .cursor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
