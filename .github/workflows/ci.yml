@@ -42,8 +42,9 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          run_install: true
+
+      - name: Install dependencies
+        run: pnpm install
 
       - name: TypeScript type check
         run: pnpm run check
@@ -246,8 +247,9 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          run_install: true
+
+      - name: Install dependencies
+        run: pnpm install
 
       - name: Setup Java
         uses: actions/setup-java@v5
