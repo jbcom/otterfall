@@ -1,0 +1,392 @@
+# Meshy Asset Pipeline - Generate 3D assets via Meshy API
+#
+# This workflow handles the async nature of Meshy API:
+# 1. Submit generation tasks and store task IDs
+# 2. Wait for webhook callbacks (via repository_dispatch)
+# 3. Process completed assets and integrate into ECS
+#
+# Webhook setup:
+# - Configure Meshy API webhooks to POST to:
+#   https://api.github.com/repos/{owner}/{repo}/dispatches
+# - Use a webhook proxy service (e.g., smee.io) or GitHub App for auth
+
+name: Meshy Asset Pipeline
+
+on:
+  # Manual trigger for specific species
+  workflow_dispatch:
+    inputs:
+      species:
+        description: 'Species to generate (e.g., otter, beaver)'
+        required: true
+        default: 'otter'
+      prompt:
+        description: 'Generation prompt'
+        required: true
+        default: 'A realistic river otter, quadruped, detailed fur texture'
+      retexture_prompt:
+        description: 'Retexture variant prompt'
+        required: false
+        default: 'grey fur with white chest markings'
+      skip_animations:
+        description: 'Skip animation generation'
+        type: boolean
+        default: false
+
+  # Webhook callback from Meshy API (via repository_dispatch)
+  repository_dispatch:
+    types:
+      - meshy_webhook_static
+      - meshy_webhook_rigged
+      - meshy_webhook_animated
+      - meshy_webhook_retextured
+
+env:
+  PYTHON_VERSION: '3.11'
+  UV_VERSION: '0.4.0'
+  MODELS_PATH: 'client/public/models'
+
+jobs:
+  # Initial asset generation submission
+  submit-generation:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      task_id: ${{ steps.submit.outputs.task_id }}
+      species: ${{ inputs.species }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python with uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install mesh_toolkit
+        run: |
+          cd python/mesh_toolkit
+          uv sync
+
+      - name: Submit Text-to-3D task
+        id: submit
+        env:
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+          MESHY_WEBHOOK_BASE_URL: ${{ secrets.MESHY_WEBHOOK_URL }}
+        run: |
+          cd python/mesh_toolkit
+
+          # Submit task using mesh_toolkit
+          RESULT=$(uv run python -c "
+          import json
+          from mesh_toolkit.services.factory import ServiceFactory
+
+          factory = ServiceFactory(
+              webhook_base_url='${{ secrets.MESHY_WEBHOOK_URL }}'
+          )
+          service = factory.text3d()
+
+          result = service.submit_task(
+              species='${{ inputs.species }}',
+              prompt='${{ inputs.prompt }}',
+              callback_url=factory.webhook_url('${{ inputs.species }}', 'static')
+          )
+
+          print(json.dumps({
+              'task_id': result.task_id,
+              'spec_hash': result.spec_hash
+          }))
+          ")
+
+          TASK_ID=$(echo "$RESULT" | jq -r '.task_id')
+          echo "task_id=$TASK_ID" >> $GITHUB_OUTPUT
+          echo "Submitted task: $TASK_ID"
+
+      - name: Update manifest
+        run: |
+          git config user.name "CrewAI Bot"
+          git config user.email "crewai-bot@github.actions"
+
+          if [[ -n $(git status --porcelain) ]]; then
+            git add ${{ env.MODELS_PATH }}/${{ inputs.species }}/manifest.json
+            git commit -m "chore(meshy): Submit generation task for ${{ inputs.species }}
+
+            Task ID: ${{ steps.submit.outputs.task_id }}
+            Prompt: ${{ inputs.prompt }}"
+            git push
+          fi
+
+  # Process webhook callback for completed static model
+  process-static:
+    if: github.event.action == 'meshy_webhook_static'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python with uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install Python and dependencies
+        run: |
+          uv python install ${{ env.PYTHON_VERSION }}
+          cd python/mesh_toolkit
+          uv sync
+
+      - name: Process static model callback
+        env:
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+        run: |
+          cd python/mesh_toolkit
+
+          # Extract data from webhook payload
+          TASK_ID='${{ github.event.client_payload.task_id }}'
+          STATUS='${{ github.event.client_payload.status }}'
+          SPECIES='${{ github.event.client_payload.species }}'
+
+          if [[ "$STATUS" != "SUCCEEDED" ]]; then
+            echo "Task failed with status: $STATUS"
+            exit 1
+          fi
+
+          # Download GLB and update manifest
+          uv run python -c "
+          from mesh_toolkit.client import MeshyClient
+          from mesh_toolkit.persistence.repository import TaskRepository
+
+          client = MeshyClient()
+          repo = TaskRepository()
+
+          # Get task result
+          result = client.get_text_to_3d('$TASK_ID')
+
+          # Download GLB
+          output_path = 'client/public/models/${SPECIES}/static.glb'
+          client.download_file(result.model_urls.glb, output_path)
+          print(f'Downloaded: {output_path}')
+
+          # Update manifest
+          repo.record_task_update(
+              species='$SPECIES',
+              spec_hash='${{ github.event.client_payload.spec_hash }}',
+              task_id='$TASK_ID',
+              status='SUCCEEDED',
+              result_paths={'glb': output_path}
+          )
+          "
+
+      - name: Submit rigging task
+        env:
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+        run: |
+          cd python/mesh_toolkit
+
+          uv run python -c "
+          from mesh_toolkit.services.factory import ServiceFactory
+
+          factory = ServiceFactory(
+              webhook_base_url='${{ secrets.MESHY_WEBHOOK_URL }}'
+          )
+          service = factory.rigging()
+
+          result = service.submit_task(
+              species='${{ github.event.client_payload.species }}',
+              model_id='${{ github.event.client_payload.task_id }}',
+              callback_url=factory.webhook_url('${{ github.event.client_payload.species }}', 'rigged')
+          )
+          print(f'Rigging task submitted: {result.task_id}')
+          "
+
+      - name: Commit changes
+        run: |
+          git config user.name "CrewAI Bot"
+          git config user.email "crewai-bot@github.actions"
+
+          if [[ -n $(git status --porcelain) ]]; then
+            git add -A
+            git commit -m "feat(assets): Downloaded static model for ${{ github.event.client_payload.species }}
+
+            Task ID: ${{ github.event.client_payload.task_id }}
+            Status: SUCCEEDED"
+            git push
+          fi
+
+  # Process webhook callback for rigged model
+  process-rigged:
+    if: github.event.action == 'meshy_webhook_rigged'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python with uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          uv python install ${{ env.PYTHON_VERSION }}
+          cd python/mesh_toolkit
+          uv sync
+
+      - name: Process rigged model and submit animations
+        env:
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+        run: |
+          cd python/mesh_toolkit
+
+          TASK_ID='${{ github.event.client_payload.task_id }}'
+          SPECIES='${{ github.event.client_payload.species }}'
+          STATUS='${{ github.event.client_payload.status }}'
+
+          if [[ "$STATUS" != "SUCCEEDED" ]]; then
+            echo "Rigging failed: $STATUS"
+            exit 1
+          fi
+
+          # Submit animation tasks
+          uv run python -c "
+          from mesh_toolkit.services.factory import ServiceFactory
+
+          factory = ServiceFactory(
+              webhook_base_url='${{ secrets.MESHY_WEBHOOK_URL }}'
+          )
+          service = factory.animation()
+
+          # Walk animation
+          walk = service.submit_task(
+              species='$SPECIES',
+              model_id='$TASK_ID',
+              animation_id='1',
+              callback_url=factory.webhook_url('$SPECIES', 'walk')
+          )
+          print(f'Walk animation submitted: {walk.task_id}')
+
+          # Attack animation
+          attack = service.submit_task(
+              species='$SPECIES',
+              model_id='$TASK_ID',
+              animation_id='4',
+              callback_url=factory.webhook_url('$SPECIES', 'attack')
+          )
+          print(f'Attack animation submitted: {attack.task_id}')
+          "
+
+      - name: Commit manifest updates
+        run: |
+          git config user.name "CrewAI Bot"
+          git config user.email "crewai-bot@github.actions"
+
+          if [[ -n $(git status --porcelain) ]]; then
+            git add -A
+            git commit -m "chore(meshy): Rigging complete, animations submitted for ${{ github.event.client_payload.species }}"
+            git push
+          fi
+
+  # Process animated model webhooks
+  process-animated:
+    if: github.event.action == 'meshy_webhook_animated'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python with uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          uv python install ${{ env.PYTHON_VERSION }}
+          cd python/mesh_toolkit
+          uv sync
+
+      - name: Download animated GLB
+        env:
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+        run: |
+          cd python/mesh_toolkit
+
+          TASK_ID='${{ github.event.client_payload.task_id }}'
+          SPECIES='${{ github.event.client_payload.species }}'
+          ANIM_TYPE='${{ github.event.client_payload.animation_type }}'
+
+          uv run python -c "
+          from mesh_toolkit.client import MeshyClient
+          from mesh_toolkit.persistence.repository import TaskRepository
+
+          client = MeshyClient()
+          repo = TaskRepository()
+
+          result = client.get_animation('$TASK_ID')
+          output_path = f'client/public/models/$SPECIES/${ANIM_TYPE}.glb'
+
+          client.download_file(result.model_url, output_path)
+          print(f'Downloaded: {output_path}')
+
+          repo.record_task_update(
+              species='$SPECIES',
+              spec_hash='${{ github.event.client_payload.spec_hash }}',
+              task_id='$TASK_ID',
+              status='SUCCEEDED',
+              result_paths={'glb': output_path}
+          )
+          "
+
+      - name: Commit animated GLB
+        run: |
+          git config user.name "CrewAI Bot"
+          git config user.email "crewai-bot@github.actions"
+
+          if [[ -n $(git status --porcelain) ]]; then
+            git add -A
+            git commit -m "feat(assets): Downloaded ${{ github.event.client_payload.animation_type }} animation for ${{ github.event.client_payload.species }}"
+            git push
+          fi
+
+  # HITL Review notification
+  notify-review:
+    needs: [process-static, process-rigged, process-animated]
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create review issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const species = '${{ github.event.client_payload.species }}' || '${{ inputs.species }}';
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[HITL Review] Asset generation complete: ${species}`,
+              body: `## Asset Generation Complete
+
+              **Species:** ${species}
+              **Workflow Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+              ### Generated Assets
+              - [ ] Static model (static.glb)
+              - [ ] Walk animation (walk.glb)
+              - [ ] Attack animation (attack.glb)
+
+              ### Review Checklist
+              - [ ] Model quality acceptable
+              - [ ] Animations play correctly
+              - [ ] Textures look good
+              - [ ] Scale is appropriate for game
+
+              ### Actions
+              - Comment \`/approve\` to integrate into ECS
+              - Comment \`/reject\` with feedback to regenerate
+              `,
+              labels: ['hitl-review', 'assets', 'crewai']
+            });

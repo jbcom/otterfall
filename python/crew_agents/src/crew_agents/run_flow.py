@@ -96,32 +96,32 @@ if __name__ == "__main__":
             print(f"Result: {result}")
         
         elif flow_name == "meshy_asset":
-        species = sys.argv[2] if len(sys.argv) > 2 else "otter"
-        prompt = sys.argv[3] if len(sys.argv) > 3 else "A realistic otter"
-        retexture = sys.argv[4] if len(sys.argv) > 4 else "grey fur variant"
-        run_meshy_asset(species, prompt, retexture)
-    
-    elif flow_name == "prototype_assessment":
-        prototypes = sys.argv[2:] if len(sys.argv) > 2 else ["biome_selector_diorama"]
-        run_prototype_assessment(prototypes)
-    
-    elif flow_name == "asset_integration":
-        manifest = {
-            "species": sys.argv[2] if len(sys.argv) > 2 else "otter",
-            "glb_url": sys.argv[3] if len(sys.argv) > 3 else "",
-            "animations": []
-        }
-        run_asset_integration(manifest)
-    
-    elif flow_name == "hitl_review":
-        content_type = sys.argv[2] if len(sys.argv) > 2 else "asset"
-        content_url = sys.argv[3] if len(sys.argv) > 3 else ""
-        run_hitl_review(content_type, content_url)
-    
-    elif flow_name == "batch_generation":
-        species_list = sys.argv[2:] if len(sys.argv) > 2 else ["otter", "beaver", "muskrat"]
-        run_batch_generation(species_list)
-    
+            species = sys.argv[2] if len(sys.argv) > 2 else "otter"
+            prompt = sys.argv[3] if len(sys.argv) > 3 else "A realistic otter"
+            retexture = sys.argv[4] if len(sys.argv) > 4 else "grey fur variant"
+            run_meshy_asset(species, prompt, retexture)
+
+        elif flow_name == "prototype_assessment":
+            prototypes = sys.argv[2:] if len(sys.argv) > 2 else ["biome_selector_diorama"]
+            run_prototype_assessment(prototypes)
+
+        elif flow_name == "asset_integration":
+            manifest = {
+                "species": sys.argv[2] if len(sys.argv) > 2 else "otter",
+                "glb_url": sys.argv[3] if len(sys.argv) > 3 else "",
+                "animations": []
+            }
+            run_asset_integration(manifest)
+
+        elif flow_name == "hitl_review":
+            content_type = sys.argv[2] if len(sys.argv) > 2 else "asset"
+            content_url = sys.argv[3] if len(sys.argv) > 3 else ""
+            run_hitl_review(content_type, content_url)
+
+        elif flow_name == "batch_generation":
+            species_list = sys.argv[2:] if len(sys.argv) > 2 else ["otter", "beaver", "muskrat"]
+            run_batch_generation(species_list)
+
     except Exception as e:
         print(f"\n❌ Flow execution failed: {str(e)}")
         import traceback

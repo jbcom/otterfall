@@ -1,0 +1,319 @@
+# CrewAI Orchestrator - Main workflow for AI-managed development
+#
+# This workflow enables CrewAI to act as the managing agent for development.
+# It can be triggered by:
+# - Manual dispatch (run specific flows)
+# - Issue events (new features, bug reports)
+# - PR events (code review requests)
+# - Schedule (daily planning, progress reviews)
+#
+# Environment secrets required:
+# - OPENROUTER_API_KEY: For LLM access
+# - MESHY_API_KEY: For 3D asset generation
+# - ANTHROPIC_API_KEY: Alternative LLM provider
+
+name: CrewAI Orchestrator
+
+on:
+  # Manual trigger with flow selection
+  workflow_dispatch:
+    inputs:
+      flow:
+        description: 'CrewAI flow to run'
+        required: true
+        type: choice
+        options:
+          - tdd_prototype
+          - meshy_asset
+          - prototype_assessment
+          - asset_integration
+          - batch_generation
+          - full_crew_kickoff
+      flow_args:
+        description: 'Flow arguments (JSON)'
+        required: false
+        default: '{}'
+      dry_run:
+        description: 'Dry run (no commits/PRs)'
+        required: false
+        type: boolean
+        default: false
+
+  # Trigger on issue events for feature/bug work
+  issues:
+    types: [opened, labeled]
+
+  # Trigger on PR comments for review requests
+  issue_comment:
+    types: [created]
+
+  # Scheduled runs for planning and progress
+  schedule:
+    # Daily planning at 9am UTC
+    - cron: '0 9 * * *'
+    # Weekly review on Mondays at 10am UTC
+    - cron: '0 10 * * 1'
+
+  # Trigger on push to feature branches for validation
+  push:
+    branches:
+      - 'feature/**'
+      - 'crewai/**'
+
+env:
+  PYTHON_VERSION: '3.11'
+  UV_VERSION: '0.4.0'
+
+jobs:
+  # Determine what action to take based on trigger
+  route:
+    runs-on: ubuntu-latest
+    outputs:
+      action: ${{ steps.router.outputs.action }}
+      flow: ${{ steps.router.outputs.flow }}
+      flow_args: ${{ steps.router.outputs.flow_args }}
+      should_run: ${{ steps.router.outputs.should_run }}
+    steps:
+      - name: Route based on trigger
+        id: router
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const event = context.eventName;
+            let action = 'none';
+            let flow = '';
+            let flowArgs = '{}';
+            let shouldRun = 'false';
+
+            if (event === 'workflow_dispatch') {
+              action = 'run_flow';
+              flow = '${{ inputs.flow }}';
+              flowArgs = '${{ inputs.flow_args }}';
+              shouldRun = 'true';
+            }
+            else if (event === 'issues') {
+              const issue = context.payload.issue;
+              const labels = issue.labels.map(l => l.name);
+
+              // Check for CrewAI-relevant labels
+              if (labels.includes('crewai') || labels.includes('ai-ready')) {
+                action = 'analyze_issue';
+                flow = 'tdd_prototype';
+                flowArgs = JSON.stringify({
+                  issue_number: issue.number,
+                  title: issue.title,
+                  body: issue.body
+                });
+                shouldRun = 'true';
+              }
+            }
+            else if (event === 'issue_comment') {
+              const comment = context.payload.comment.body;
+              const isPR = !!context.payload.issue.pull_request;
+
+              // Check for CrewAI commands
+              if (comment.includes('@crewai') || comment.includes('/crewai')) {
+                action = isPR ? 'review_pr' : 'respond_issue';
+                shouldRun = 'true';
+
+                // Parse command from comment
+                const match = comment.match(/(?:@crewai|\/crewai)\s+(\w+)(?:\s+(.*))?/);
+                if (match) {
+                  flow = match[1] || 'analyze';
+                  flowArgs = JSON.stringify({
+                    command: match[1],
+                    args: match[2] || '',
+                    issue_number: context.payload.issue.number,
+                    is_pr: isPR
+                  });
+                }
+              }
+            }
+            else if (event === 'schedule') {
+              const hour = new Date().getUTCHours();
+              if (hour === 9) {
+                action = 'daily_planning';
+                flow = 'full_crew_kickoff';
+                shouldRun = 'true';
+              } else if (hour === 10) {
+                action = 'weekly_review';
+                flow = 'prototype_assessment';
+                shouldRun = 'true';
+              }
+            }
+            else if (event === 'push') {
+              action = 'validate_branch';
+              flow = 'tdd_prototype';
+              flowArgs = JSON.stringify({ phase: 'validation' });
+              shouldRun = 'true';
+            }
+
+            core.setOutput('action', action);
+            core.setOutput('flow', flow);
+            core.setOutput('flow_args', flowArgs);
+            core.setOutput('should_run', shouldRun);
+
+            console.log(`Routed: action=${action}, flow=${flow}, shouldRun=${shouldRun}`);
+
+  # Run CrewAI flow
+  run-crew:
+    needs: route
+    if: needs.route.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python with uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          cd python/crew_agents
+          uv sync --all-extras
+
+      - name: Setup Node.js (for frontend validation)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install Node dependencies
+        run: pnpm install
+
+      - name: Run CrewAI Flow
+        id: crew
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MESHY_API_KEY: ${{ secrets.MESHY_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CREW_ACTION: ${{ needs.route.outputs.action }}
+          CREW_FLOW: ${{ needs.route.outputs.flow }}
+          CREW_FLOW_ARGS: ${{ needs.route.outputs.flow_args }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+        run: |
+          cd python/crew_agents
+
+          echo "Running CrewAI flow: $CREW_FLOW"
+          echo "Action: $CREW_ACTION"
+          echo "Args: $CREW_FLOW_ARGS"
+
+          # Run the appropriate flow
+          case "$CREW_FLOW" in
+            full_crew_kickoff)
+              uv run python -m crew_agents.crew
+              ;;
+            tdd_prototype)
+              uv run python -m crew_agents.run_flow tdd_prototype
+              ;;
+            meshy_asset)
+              uv run python -m crew_agents.run_flow meshy_asset
+              ;;
+            prototype_assessment)
+              uv run python -m crew_agents.run_flow prototype_assessment
+              ;;
+            asset_integration)
+              uv run python -m crew_agents.run_flow asset_integration
+              ;;
+            batch_generation)
+              uv run python -m crew_agents.run_flow batch_generation
+              ;;
+            *)
+              echo "Unknown flow: $CREW_FLOW"
+              exit 1
+              ;;
+          esac
+
+      - name: Commit changes (if any)
+        if: inputs.dry_run != true
+        run: |
+          git config user.name "CrewAI Bot"
+          git config user.email "crewai-bot@github.actions"
+
+          if [[ -n $(git status --porcelain) ]]; then
+            git add -A
+            git commit -m "chore(crewai): ${{ needs.route.outputs.action }} - ${{ needs.route.outputs.flow }}
+
+            Automated commit by CrewAI orchestrator.
+            Action: ${{ needs.route.outputs.action }}
+            Flow: ${{ needs.route.outputs.flow }}
+            Run: ${{ github.run_id }}"
+
+            git push
+          else
+            echo "No changes to commit"
+          fi
+
+      - name: Comment on issue/PR
+        if: needs.route.outputs.action == 'analyze_issue' || needs.route.outputs.action == 'respond_issue' || needs.route.outputs.action == 'review_pr'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const action = '${{ needs.route.outputs.action }}';
+            const flow = '${{ needs.route.outputs.flow }}';
+            const issueNumber = context.issue?.number || JSON.parse('${{ needs.route.outputs.flow_args }}').issue_number;
+
+            if (!issueNumber) return;
+
+            const body = `## CrewAI Analysis Complete
+
+            **Action:** ${action}
+            **Flow:** ${flow}
+            **Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            The CrewAI crew has analyzed this ${action.includes('pr') ? 'PR' : 'issue'} and generated recommendations.
+
+            See the workflow logs for detailed output.`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: body
+            });
+
+  # Health check for scheduled runs
+  health-check:
+    needs: route
+    if: needs.route.outputs.action == 'daily_planning' || needs.route.outputs.action == 'weekly_review'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check API keys
+        run: |
+          if [[ -z "${{ secrets.OPENROUTER_API_KEY }}" ]]; then
+            echo "::warning::OPENROUTER_API_KEY not set"
+          fi
+          if [[ -z "${{ secrets.MESHY_API_KEY }}" ]]; then
+            echo "::warning::MESHY_API_KEY not set"
+          fi
+
+      - name: Check Python config
+        run: |
+          cd python/crew_agents
+          if [[ -f "crewbase.yaml" ]]; then
+            echo "crewbase.yaml found"
+            head -50 crewbase.yaml
+          else
+            echo "::error::crewbase.yaml not found"
+            exit 1
+          fi

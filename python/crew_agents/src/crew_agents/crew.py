@@ -11,6 +11,81 @@ from crewai import Crew
 from crewai.flow import Flow
 import yaml
 from pathlib import Path
+from typing import Optional, Dict, Any
+
+
+def get_crewbase_path() -> Path:
+    """Get path to crewbase.yaml."""
+    return Path(__file__).parent.parent.parent / "crewbase.yaml"
+
+
+class CrewAgents:
+    """
+    Wrapper class for CrewAI crew execution.
+
+    Provides a class-based interface for flows to instantiate and run crews.
+    This bridges the gap between Flow expectations and the YAML-based crew config.
+    """
+
+    def __init__(self, config_path: Optional[Path] = None):
+        """Initialize CrewAgents with optional custom config path."""
+        self.config_path = config_path or get_crewbase_path()
+        self._crew: Optional[Crew] = None
+        self._config: Optional[Dict[str, Any]] = None
+
+    @property
+    def config(self) -> Dict[str, Any]:
+        """Lazy load configuration."""
+        if self._config is None:
+            with open(self.config_path) as f:
+                self._config = yaml.safe_load(f)
+        return self._config
+
+    @property
+    def crew(self) -> Crew:
+        """Lazy load crew from YAML."""
+        if self._crew is None:
+            self._crew = Crew.from_yaml(str(self.config_path))
+        return self._crew
+
+    def kickoff(self, inputs: Optional[Dict[str, Any]] = None) -> Any:
+        """
+        Execute the crew with given inputs.
+
+        Args:
+            inputs: Optional dict with:
+                - task: Specific task name to run (filters crew tasks)
+                - Any other inputs passed to crew.kickoff()
+
+        Returns:
+            CrewOutput from crew execution
+        """
+        crew = self.crew
+
+        # If specific task requested, filter to that task
+        if inputs and "task" in inputs:
+            task_name = inputs.pop("task")
+            matching_tasks = [t for t in crew.tasks if t.name == task_name]
+            if not matching_tasks:
+                available = [t.name for t in crew.tasks]
+                raise ValueError(
+                    f"Task '{task_name}' not found. Available: {available}"
+                )
+            crew.tasks = matching_tasks
+
+        return crew.kickoff(inputs=inputs)
+
+    def kickoff_async(self, inputs: Optional[Dict[str, Any]] = None) -> Any:
+        """Async version of kickoff for parallel execution."""
+        crew = self.crew
+
+        if inputs and "task" in inputs:
+            task_name = inputs.pop("task")
+            matching_tasks = [t for t in crew.tasks if t.name == task_name]
+            if matching_tasks:
+                crew.tasks = matching_tasks
+
+        return crew.kickoff_async(inputs=inputs)
 
 
 def load_crewbase():
